@@ -544,7 +544,7 @@ def main():
     )
 
     # Broad Stats Ribbon (Top KPIs)
-    kpis = compute_kpis(filtered_sales_df)
+    kpis = compute_kpis(filtered_sales_df, cancellations_df=cancellations_df)
     _, pareto_share = compute_pareto_concentration(filtered_customer_df)
     drivers = what_drives_revenue_analysis(filtered_sales_df)
 

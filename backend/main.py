@@ -8,7 +8,7 @@ import io
 import os
 import sys
 from pathlib import Path
-from typing import Optional, List, Any
+from typing import Optional, Any
 
 # Ensure project root is in sys.path
 ROOT_DIR = Path(__file__).resolve().parent.parent

@@ -1,11 +1,12 @@
 # RetailPulse — Sales Intelligence & Customer Insights Dashboard
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B.svg)](https://streamlit.io/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-Vite-61DAFB.svg)](https://react.dev/)
 [![Scikit-Learn](https://img.shields.io/badge/scikit--learn-ML-F7931E.svg)](https://scikit-learn.org/)
 [![Tests](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](https://docs.pytest.org/)
 
-RetailPulse is an end-to-end data science, business intelligence, and customer analytics application designed for retail operators. It bridges raw transaction records, machine learning clustering, and actionable marketing intelligence through a fast, modular Streamlit dashboard.
+RetailPulse is an end-to-end data science, business intelligence, and customer analytics application designed for retail operators. It bridges raw transaction records, machine learning clustering, and actionable marketing intelligence through a React frontend and FastAPI backend. Analytics and ML code live in `src/` and is reused by the API — it is not rewritten in the UI.
 
 ---
 
@@ -65,61 +66,22 @@ RetailPulse is an end-to-end data science, business intelligence, and customer a
 
 ## 🏛️ Architecture & Modular Extensibility
 
-Data processing and machine learning algorithms are completely decoupled from Streamlit UI rendering. Dashboard pages are independent modules registered in a single dictionary in `dashboards/app.py`.
+Data processing and machine learning stay in `src/`. FastAPI exposes those functions as REST endpoints. React components fetch JSON and render charts; they do not invent metrics.
 
 ```text
 RetailPulse_Project/
 │
-├── src/
-│   ├── __init__.py
-│   ├── config.py                 # Central configurations, column schemas, constants, seeds
-│   ├── data_loader.py            # CSV/Excel ingestion, column standardization, Parquet caching
-│   ├── cleaning.py               # 7-stage audit-logged cleaning pipeline & guest retention
-│   ├── sales_analytics.py        # KPIs, Pareto concentration, revenue drivers, computed insights
-│   ├── customer_segmentation.py  # RFM table, log1p, K-Means (k=2-8), Silhouette, 2D PCA
-│   ├── declining_activity.py     # Spend drop & inter-purchase cadence lapse detection
-│   ├── recommendations.py        # Segment marketing playbooks & causal disclaimers
-│   └── anomaly_detection.py      # Rolling baseline & IQR daily sales anomaly detection
-│
-├── dashboards/
-│   ├── app.py                    # Main Streamlit router, unified filters, file upload
-│   └── pages/
-│       ├── __init__.py
-│       ├── overview_page.py        # Executive KPI cards & sales trends
-│       ├── sales_page.py           # Revenue drivers, Pareto curve, catalog & geo analytics
-│       ├── clustering_page.py      # RFM clustering, k evaluation, PCA 2D, educational guide
-│       ├── declining_page.py       # Heuristic declining-activity re-engagement list
-│       ├── recommendations_page.py # Profile-derived marketing playbooks
-│       ├── anomaly_page.py         # Daily sales anomaly envelope
-│       ├── audit_page.py           # Step-by-step cleaning audit log & guest metrics
-│       └── exports_page.py         # Filter-synchronized CSV downloads
-│
-├── tests/
-│   ├── test_cleaning.py          # Data validation, return segregation, guest retention
-│   ├── test_data_loader.py       # File hashing, Excel/CSV loaders, schema checks
-│   ├── test_sales_analytics.py   # Hand-checkable KPIs, filtering, Pareto concentration
-│   ├── test_rfm_clustering.py    # Known RFM example, few-customer edge cases, KMeans
-│   ├── test_declining_activity.py# Known activity timeline drop & cadence rules
-│   ├── test_exports_consistency.py # Cross-pipeline segment attribute consistency
-│   ├── test_anomaly_detection.py # Rolling baseline surge/drop detection
-│   └── test_dashboard_smoke.py   # Headless smoke test across all registered pages
-│
-├── data/
-│   ├── raw/                      # Raw UCI Online Retail datasets (.csv, .xlsx)
-│   ├── cleaned/                  # Legacy preprocessed datasets
-│   └── processed/                # Gitignored hash-keyed Parquet cache
-│
-├── requirements.txt              # Production & development dependencies
-└── README.md                     # Comprehensive documentation
+├── src/                          # Reused analytics + ML (unchanged calculation core)
+├── backend/main.py               # FastAPI REST API (upload, analytics, exports)
+├── frontend/                     # React + Vite + Tailwind + Recharts
+├── dashboards/                   # Legacy Streamlit app (optional; not required to run)
+├── tests/                        # Analytics unit tests + API endpoint tests
+├── data/raw/                     # Optional UCI Online Retail CSV/XLSX for the demo loader
+├── requirements.txt
+└── README.md
 ```
 
-### Adding a New Dashboard Page
-To add a new view to the dashboard:
-1. Create `dashboards/pages/my_new_page.py` with standard `render(sales_df, customer_df, guest_metrics, audit_logger, cancellations_df)`.
-2. Register it in `dashboards/app.py` inside `PAGES`:
-   ```python
-   "✨ My New Page": lambda s, c, g, a, can: my_new_page.render(s, c, g),
-   ```
+REST endpoints: `/api/dataset/upload`, `/api/dataset/status`, `/api/overview`, `/api/sales`, `/api/customer-segments`, `/api/model-diagnostics`, `/api/declining-customers`, `/api/recommendations`, `/api/anomalies`, `/api/audit-log`, `/api/export/{sales|monthly|segments|declining|anomalies}`.
 
 ---
 
@@ -134,33 +96,44 @@ To add a new view to the dashboard:
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-* Python 3.10+ (tested on Python 3.13 and Python 3.14)
+* Python 3.10+
+* Node.js 20+
 * Virtual environment (recommended)
 
-### 2. Installation
+### 2. Backend
 ```bash
-# Clone the repository
 git clone https://github.com/your-username/RetailPulse-Customer-Analytics-Dashboard.git
 cd RetailPulse-Customer-Analytics-Dashboard
 
-# Install required dependencies
 py -m pip install -r requirements.txt
-# (or on Linux/macOS: pip install -r requirements.txt)
+# Linux/macOS: pip install -r requirements.txt
+
+# From the project root so `src` and `backend` import correctly
+py -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### 3. Run the Streamlit Dashboard
+Optional: place `Online Retail.csv` or `Online Retail.xlsx` in `data/raw/` to enable **Load demo dataset** in the UI. That loader uses the real file on disk, not fabricated KPIs.
+
+### 3. Frontend
+In a second terminal:
 ```bash
-# Launch dashboard
-py -m streamlit run dashboards/app.py
-# (or on Linux/macOS: streamlit run dashboards/app.py)
+cd frontend
+npm install
+npm run dev
 ```
-Open your browser at `http://localhost:8501`.
+Open `http://localhost:5173`. Vite proxies `/api` to `http://127.0.0.1:8000`. To call the API on another origin, set `VITE_API_URL` (for example `http://127.0.0.1:8000`) and keep CORS origins in `backend/main.py` in sync. Extra origins can be passed with `FRONTEND_ORIGIN`.
 
-### 4. Running the Test Suite
-The repository includes **28 deterministic unit and smoke tests** covering hand-checkable mathematical calculations, schema validation, return isolation, guest customer retention, RFM frequency and recency rules, candidate $k$ evaluations, and regression tests:
+Upload a CSV/XLSX with columns `InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country`. Every chart and KPI is computed from that loaded file (or from the selected on-disk benchmark file).
+
+### 4. Tests
 ```bash
 py -m pytest -v
-# (or on Linux/macOS: pytest -v)
+```
+Analytics tests cover cleaning, KPIs, RFM/K-Means, declining activity, and anomalies. `tests/test_api.py` uploads a schema-valid transaction CSV and asserts overview, sales, segments, exports, and related endpoints.
+
+### 5. Legacy Streamlit app (optional)
+```bash
+py -m streamlit run dashboards/app.py
 ```
 
 ---

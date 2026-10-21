@@ -49,6 +49,16 @@ def test_compute_kpis(clean_sales_sample):
     assert kpis["avg_order_value"] == 60.0
 
 
+def test_compute_kpis_includes_cancellation_rate(clean_sales_sample):
+    cancellations_df = pd.DataFrame([
+        {"InvoiceNo": "C1", "StockCode": "A", "Description": "Prod A", "Quantity": -2, "UnitPrice": 10.0, "LineRevenue": -20.0, "CustomerID": "101", "Country": "UK", "InvoiceDate": pd.to_datetime("2021-01-06")},
+    ])
+
+    kpis = compute_kpis(clean_sales_sample, cancellations_df=cancellations_df)
+
+    assert kpis["cancellation_rate_pct"] == pytest.approx(20.0)
+
+
 def test_filter_data(clean_sales_sample):
     # Filter by country France
     france_df = filter_data(clean_sales_sample, countries=["France"])

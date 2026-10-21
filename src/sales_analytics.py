@@ -45,7 +45,10 @@ def filter_data(
     return filtered
 
 
-def compute_kpis(df: pd.DataFrame) -> Dict[str, Any]:
+def compute_kpis(
+    df: pd.DataFrame,
+    cancellations_df: Optional[pd.DataFrame] = None,
+) -> Dict[str, Any]:
     """Calculate core sales performance metrics."""
     if df.empty:
         return {
@@ -56,19 +59,26 @@ def compute_kpis(df: pd.DataFrame) -> Dict[str, Any]:
             "avg_order_value": 0.0,
             "total_quantity": 0,
             "guest_orders": 0,
+            "cancellation_rate_pct": 0.0,
         }
 
     total_sales = float(df[COL_LINE_REVENUE].sum())
     distinct_invoices = int(df[COL_INVOICE].nunique())
-    
+
     # Non-guest distinct customers
     id_cust_mask = df[COL_CUST] != GUEST_CUSTOMER_LABEL
     unique_customers = int(df.loc[id_cust_mask, COL_CUST].nunique())
-    
+
     distinct_products = int(df[COL_STOCK].nunique())
     avg_order_value = (total_sales / distinct_invoices) if distinct_invoices > 0 else 0.0
     total_quantity = int(df[COL_QTY].sum())
     guest_orders = int(df.loc[~id_cust_mask, COL_INVOICE].nunique())
+
+    cancellation_rate_pct = 0.0
+    if cancellations_df is not None and not cancellations_df.empty:
+        cancelled_invoices = int(cancellations_df[COL_INVOICE].nunique()) if COL_INVOICE in cancellations_df.columns else 0
+        total_order_count = distinct_invoices + cancelled_invoices
+        cancellation_rate_pct = (cancelled_invoices / total_order_count * 100.0) if total_order_count > 0 else 0.0
 
     return {
         "total_positive_sales": total_sales,
@@ -78,6 +88,7 @@ def compute_kpis(df: pd.DataFrame) -> Dict[str, Any]:
         "avg_order_value": avg_order_value,
         "total_quantity": total_quantity,
         "guest_orders": guest_orders,
+        "cancellation_rate_pct": cancellation_rate_pct,
     }
 
 

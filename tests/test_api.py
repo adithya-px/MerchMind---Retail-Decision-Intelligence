@@ -12,31 +12,37 @@ from backend.main import app, DataStore
 
 
 def build_sample_csv() -> bytes:
-    """Construct a schema-valid retail file with enough customers for k=4 clustering."""
+    """Construct a schema-valid retail file with distinct RFM cohorts for k=4 clustering."""
     header = "InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country"
     rows = [header]
-    invoices = []
 
     def add(invoice, stock, desc, qty, date, price, customer, country):
-        invoices.append(
-            f"{invoice},{stock},{desc},{qty},{date},{price},{customer},{country}"
-        )
+        rows.append(f"{invoice},{stock},{desc},{qty},{date},{price},{customer},{country}")
 
-    countries = ["United Kingdom", "France", "Germany"]
-    for customer in range(101, 113):
-        country = countries[(customer - 101) % 3]
-        add(f"5{customer}01", "85123A", "WHITE HEART T-LIGHT", 6, "2011-02-10 09:00:00", 2.55, customer, country)
-        add(f"5{customer}02", "71053", "WHITE METAL LANTERN", 4, "2011-03-12 11:15:00", 3.39, customer, country)
-        add(f"5{customer}03", "84406B", "CREAM CUPID HEARTS", 8, "2011-04-18 14:20:00", 2.75, customer, country)
-        if customer <= 106:
-            add(f"5{customer}04", "84029G", "KNITTED UNION FLAG HOT WATER BOTTLE", 12, "2011-06-20 10:05:00", 3.39, customer, country)
-        else:
-            add(f"5{customer}04", "84029G", "KNITTED UNION FLAG HOT WATER BOTTLE", 1, "2011-06-21 16:40:00", 3.39, customer, country)
+    # Champions: recent, frequent, high monetary
+    for i, customer in enumerate((101, 102, 103)):
+        for n, date in enumerate(("2011-05-02 09:00:00", "2011-05-20 11:00:00", "2011-06-10 14:00:00", "2011-06-28 10:00:00")):
+            add(f"51{customer}{n}", "85123A", "WHITE HEART T-LIGHT", 20 + i, date, 12.50, customer, "United Kingdom")
+
+    # Loyal / moderate: medium recency and spend
+    for i, customer in enumerate((104, 105, 106)):
+        for n, date in enumerate(("2011-04-05 10:00:00", "2011-05-15 12:00:00", "2011-06-18 16:00:00")):
+            add(f"52{customer}{n}", "71053", "WHITE METAL LANTERN", 6 + i, date, 3.39, customer, "France")
+
+    # At-risk: historically valuable, last purchase is old
+    for i, customer in enumerate((107, 108, 109)):
+        for n, date in enumerate(("2011-01-08 09:00:00", "2011-01-22 11:00:00", "2011-02-04 13:00:00")):
+            add(f"53{customer}{n}", "84406B", "CREAM CUPID HEARTS", 15 + i, date, 8.00, customer, "Germany")
+
+    # Inactive / low-value: few cheap old orders
+    for i, customer in enumerate((110, 111, 112)):
+        add(f"54{customer}0", "84029G", "KNITTED UNION FLAG HOT WATER BOTTLE", 1, "2011-01-12 10:00:00", 1.25, customer, "United Kingdom")
+        if i == 0:
+            add(f"54{customer}1", "21730", "GLASS STAR FROSTED T-LIGHT HOLDER", 1, "2011-02-01 09:00:00", 1.25, customer, "United Kingdom")
 
     add("599001", "21730", "GLASS STAR FROSTED T-LIGHT HOLDER", 24, "2011-05-15 08:30:00", 4.25, "", "United Kingdom")
     add("C500001", "85123A", "WHITE HEART T-LIGHT", -2, "2011-03-15 12:00:00", 2.55, 101, "United Kingdom")
     add("599999", "85123A", "WHITE HEART T-LIGHT", 80, "2011-05-01 10:00:00", 2.55, 101, "United Kingdom")
-    rows.extend(invoices)
     return "\n".join(rows).encode("utf-8")
 
 
