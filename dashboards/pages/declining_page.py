@@ -17,9 +17,10 @@ from src.config import (
 )
 
 
-def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dict) -> None:
-    st.title("📉 Declining-Activity Detection")
-    st.caption("Identify previously engaged customers exhibiting declining spend or lapsed purchase cadence.")
+def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dict, show_title: bool = True) -> None:
+    if show_title:
+        st.title("📉 Declining-Activity Detection")
+        st.caption("Identify previously engaged accounts exhibiting sharp spend drops or lapsed purchase cadence.")
 
     if customer_df.empty:
         st.warning("No identified customer transactions available.")
@@ -27,9 +28,8 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
 
     # Methodological disclosure banner
     st.info(
-        "⚠️ **Methodology Note**: This analysis provides **heuristic activity indicators**, "
-        "not a predictive machine-learning churn forecast or causal attribution model. "
-        "It benchmarks recent ordering velocity against each customer's own baseline and purchasing cadence."
+        "ℹ️ **Methodology Note**: This analysis computes **heuristic activity indicators**, "
+        "not a black-box churn forecast. It benchmarks recent purchasing velocity against each customer's own baseline and gap cadence."
     )
 
     # Window selection controls
@@ -51,11 +51,11 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
 
     # Summary metric cards
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Customers Flagged", f"{summary['flagged_declining']:,}", help="Previously active accounts with significant spend drop or lapsed cadence.")
+    c1.metric("Flagged Accounts", f"{summary['flagged_declining']:,}", help="Previously active accounts with significant spend drop or lapsed cadence.")
     c2.metric("Revenue at Risk", f"${summary['revenue_at_risk']:,.2f}", help="Total drop in positive spend across flagged accounts.")
-    c3.metric("Eligible Customer Cohort", f"{summary['eligible_customers']:,}", help="Accounts meeting minimum baseline history threshold.")
+    c3.metric("Eligible Cohort", f"{summary['eligible_customers']:,}", help="Accounts meeting minimum baseline history threshold.")
     c4.metric(
-        "Excluded (Too Little History)",
+        "Excluded (New / Light)",
         f"{summary['excluded_insufficient_history']:,}",
         help="Accounts with fewer than minimum orders or spend in the prior baseline window.",
     )
@@ -67,7 +67,7 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
         col_chart, col_reasons = st.columns([2, 1])
 
         with col_chart:
-            st.subheader("Distribution of Drop Magnitude")
+            st.subheader("Distribution of Drop Severity")
             fig_drop = px.histogram(
                 declining_df,
                 x="SpendDropPct",
@@ -81,20 +81,20 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
                 template="plotly_dark",
                 margin=dict(l=20, r=20, t=40, b=20),
             )
-            st.plotly_chart(fig_drop, use_container_width=True)
+            st.plotly_chart(fig_drop, width="stretch")
 
         with col_reasons:
             st.subheader("Primary Decline Drivers")
             reason_counts = declining_df["DeclineReason"].value_counts().head(5)
             for reason, cnt in reason_counts.items():
-                st.markdown(f"• **{reason}**: {cnt:,} accounts")
+                st.markdown(f"• **{reason}**: `{cnt:,}` accounts")
 
         st.markdown("---")
 
         # Ranked Re-Engagement Table
         st.subheader("🎯 Priority Accounts to Re-Engage")
         st.caption(
-            "Ranked by absolute past revenue lost (Spend Drop). Excludes customers with insufficient historical orders."
+            "Ranked by absolute past revenue lost (Spend Drop). Excludes accounts with insufficient historical transactions."
         )
 
         display_cols = [
@@ -116,7 +116,7 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
                 "DaysSinceLastPurchase": "{:d} days",
                 "LastOverallPurchase": lambda d: d.strftime("%Y-%m-%d") if pd.notna(d) else "",
             }),
-            use_container_width=True,
+            width="stretch",
             height=400,
         )
     else:

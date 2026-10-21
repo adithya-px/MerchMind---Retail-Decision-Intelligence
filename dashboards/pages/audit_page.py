@@ -53,7 +53,7 @@ def render(
                 "Rows Affected": "{:,}",
                 "Rows After": "{:,}",
             }),
-            use_container_width=True,
+            width="stretch",
         )
     else:
         st.info("Audit log unavailable.")

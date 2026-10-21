@@ -13,9 +13,10 @@ from src.recommendations import generate_recommendations
 from src.config import DEFAULT_K_CLUSTERS, RANDOM_SEED
 
 
-def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dict) -> None:
-    st.title("💡 Strategic Recommendations")
-    st.caption("Actionable marketing playbooks, retention incentives, and lifecycle interventions.")
+def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dict, show_title: bool = True) -> None:
+    if show_title:
+        st.title("💡 Strategic Recommendations")
+        st.caption("Actionable marketing playbooks, retention incentives, and lifecycle interventions.")
 
     if customer_df.empty:
         st.warning("No identified customer data available.")

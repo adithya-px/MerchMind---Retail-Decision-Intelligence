@@ -35,14 +35,21 @@ def compute_rfm_table(
     """
     if customer_df.empty:
         return pd.DataFrame(
-            columns=["CustomerID", "Recency", "Frequency", "Monetary", "FirstPurchase", "LastPurchase"]
+            columns=["CustomerID", "Recency", "Frequency", "Monetary", "AvgOrderValue", "CustomerLifespanDays", "FirstPurchase", "LastPurchase"]
         )
 
     # Exclude guest customers
     clean_cust = customer_df[customer_df[COL_CUST] != GUEST_CUSTOMER_LABEL].copy()
     if clean_cust.empty:
         return pd.DataFrame(
-            columns=["CustomerID", "Recency", "Frequency", "Monetary", "FirstPurchase", "LastPurchase"]
+            columns=["CustomerID", "Recency", "Frequency", "Monetary", "AvgOrderValue", "CustomerLifespanDays", "FirstPurchase", "LastPurchase"]
+        )
+
+    # Filter to transactions with positive monetary value
+    clean_cust = clean_cust[clean_cust[COL_LINE_REVENUE] > 0]
+    if clean_cust.empty:
+        return pd.DataFrame(
+            columns=["CustomerID", "Recency", "Frequency", "Monetary", "AvgOrderValue", "CustomerLifespanDays", "FirstPurchase", "LastPurchase"]
         )
 
     max_dataset_date = clean_cust[COL_DATE].max()
@@ -58,6 +65,9 @@ def compute_rfm_table(
         )
         .reset_index()
     )
+
+    # Only retain customers with positive monetary spend and positive frequency
+    rfm = rfm[(rfm["Monetary"] > 0) & (rfm["Frequency"] > 0)].copy()
 
     rfm["Recency"] = (ref_dt - rfm["LastPurchase"]).dt.days.clip(lower=0)
     rfm["AvgOrderValue"] = rfm["Monetary"] / rfm["Frequency"]
@@ -78,7 +88,7 @@ def evaluate_candidate_k(
     if len(rfm_df) < k_range[0]:
         raise ValueError(f"Need at least {k_range[0]} unique customers to perform clustering evaluation.")
 
-    # Skew mitigation: log1p transform
+    # Skew mitigation: log1p transform followed by StandardScaler
     features = np.log1p(rfm_df[["Recency", "Frequency", "Monetary"]].values)
     scaler = StandardScaler()
     scaled = scaler.fit_transform(features)
@@ -103,41 +113,117 @@ def evaluate_candidate_k(
 
 def assign_interpretable_labels(profiles: pd.DataFrame) -> Dict[int, Dict[str, Any]]:
     """
-    Inspects mean centroids of R, F, M across clusters to assign defensible business names.
-    If profiles do not cleanly separate into 4 archetypes, falls back to neutral descriptors.
+    Inspects centroid metrics (R, F, M) across clusters and assigns stable,
+    human-readable, distinct business segment names.
+    Ranks clusters deterministically so archetype labels remain clean and meaningful across any k.
     """
     label_map = {}
+    k = len(profiles)
+
+    if k == 0:
+        return label_map
+
+    # Fallback for single cluster
+    if k == 1:
+        cluster_id = profiles.index[0]
+        r = profiles.loc[cluster_id, "Recency_mean"]
+        f = profiles.loc[cluster_id, "Frequency_mean"]
+        m = profiles.loc[cluster_id, "Monetary_mean"]
+        label_map[cluster_id] = {
+            "name": "General Cohort",
+            "description": f"Recency avg {r:.0f}d, Frequency avg {f:.1f} orders, Monetary avg ${m:,.0f}",
+        }
+        return label_map
+
     r_med = profiles["Recency_mean"].median()
     f_med = profiles["Frequency_mean"].median()
     m_med = profiles["Monetary_mean"].median()
 
-    used_names = set()
+    # Pre-rank clusters by overall customer value score:
+    # High Monetary (50%), High Frequency (30%), Low Recency (20%)
+    r_max = profiles["Recency_mean"].max() or 1.0
+    f_max = profiles["Frequency_mean"].max() or 1.0
+    m_max = profiles["Monetary_mean"].max() or 1.0
+
+    scores = {}
+    for cluster_id, row in profiles.iterrows():
+        r_score = 1.0 - (row["Recency_mean"] / (r_max * 1.05))
+        f_score = row["Frequency_mean"] / f_max
+        m_score = row["Monetary_mean"] / m_max
+        scores[cluster_id] = (0.50 * m_score) + (0.30 * f_score) + (0.20 * r_score)
+
+    ranked_clusters = sorted(scores.keys(), key=lambda c: scores[c], reverse=True)
+
+    # Curated archetype pools depending on cluster count k
+    if k == 2:
+        tier_names = ["Champions & Core Buyers", "Hibernating / Inactive"]
+        tier_map = dict(zip(ranked_clusters, tier_names))
+    elif k == 3:
+        tier_names = ["Champions", "Promising / Moderate Buyers", "Hibernating / Inactive"]
+        tier_map = dict(zip(ranked_clusters, tier_names))
+    elif k == 4:
+        # Standard RFM 4-cluster archetypes
+        tier_map = {}
+        used_labels = set()
+        for c in ranked_clusters:
+            row = profiles.loc[c]
+            r = row["Recency_mean"]
+            f = row["Frequency_mean"]
+            m = row["Monetary_mean"]
+
+            if r <= r_med and f >= f_med and m >= m_med:
+                candidate = "Champions"
+            elif r <= r_med and f < f_med:
+                candidate = "Recent New Customers"
+            elif r > r_med and (f >= f_med or m >= m_med):
+                candidate = "At Risk / Slipping"
+            elif r > r_med and f < f_med and m < m_med:
+                candidate = "Hibernating / Inactive"
+            elif r <= r_med:
+                candidate = "Loyal Customers"
+            else:
+                candidate = "At Risk / Slipping"
+
+            if candidate in used_labels:
+                # Disambiguate with rank-based archetype
+                rank_pos = ranked_clusters.index(c)
+                fallback_names = ["Champions", "Loyal Customers", "Recent New Customers", "Hibernating / Inactive"]
+                candidate = fallback_names[rank_pos] if rank_pos < len(fallback_names) else f"Cohort {c}"
+
+            used_labels.add(candidate)
+            tier_map[c] = candidate
+    elif k == 5:
+        tier_names = [
+            "Champions",
+            "Loyal Customers",
+            "Recent New Customers",
+            "At Risk / Slipping",
+            "Hibernating / Inactive",
+        ]
+        tier_map = dict(zip(ranked_clusters, tier_names))
+    else:
+        # For k >= 6: Rank-based descriptive tier naming
+        tier_names = [
+            "Champions (Top Tier)",
+            "High-Value Core",
+            "Moderate Active",
+            "Recent New Customers",
+            "At Risk / Slipping",
+            "Hibernating / Inactive",
+            "Lapsed Low-Value",
+            "Dormant",
+        ]
+        tier_map = {}
+        for idx, c in enumerate(ranked_clusters):
+            tier_map[c] = tier_names[idx] if idx < len(tier_names) else f"Cluster {c}"
 
     for cluster_id, row in profiles.iterrows():
         r = row["Recency_mean"]
         f = row["Frequency_mean"]
         m = row["Monetary_mean"]
-
-        if r <= r_med and f >= f_med and m >= m_med:
-            candidate = "Champions"
-        elif r <= r_med and f >= f_med:
-            candidate = "Loyal Customers"
-        elif r <= r_med and f < f_med and m >= m_med:
-            candidate = "Promising High-Spenders"
-        elif r <= r_med and f < f_med:
-            candidate = "Recent New Customers"
-        elif r > r_med and (f >= f_med or m >= m_med):
-            candidate = "At Risk / Slipping"
-        else:
-            candidate = "Hibernating / Inactive"
-
-        # Avoid duplicate labels if multiple clusters fall in same quadrant
-        if candidate in used_names:
-            candidate = f"{candidate} (Cohort {cluster_id})"
-        used_names.add(candidate)
-
+        name = tier_map.get(cluster_id, f"Cluster {cluster_id}")
         label_map[cluster_id] = {
-            "name": candidate,
+            "name": name,
             "description": f"Recency avg {r:.0f}d, Frequency avg {f:.1f} orders, Monetary avg ${m:,.0f}",
         }
 
@@ -152,7 +238,7 @@ def fit_kmeans_clustering(
     """
     Fits K-Means on log1p + scaled RFM features.
     Computes PCA 2D coordinates for interactive scatter plotting.
-    Inspects cluster centroids to generate data-driven segment descriptions.
+    Inspects cluster centroids to generate stable data-driven segment descriptions.
 
     Returns:
         clustered_rfm: Dataframe with Cluster, SegmentName, PCA1, PCA2.
@@ -206,7 +292,7 @@ def fit_kmeans_clustering(
     profiles["RevenueSharePct"] = (profiles["Monetary_sum"] / total_rev * 100.0) if total_rev > 0 else 0.0
     profiles["CustomerSharePct"] = (profiles["CustomerCount"] / len(res) * 100.0)
 
-    # Label clusters only after inspecting profile centroids
+    # Label clusters deterministically after inspecting profile centroids
     label_info = assign_interpretable_labels(profiles)
     res["SegmentName"] = res["Cluster"].map(lambda c: label_info[c]["name"])
     profiles["SegmentName"] = profiles.index.map(lambda c: label_info[c]["name"])

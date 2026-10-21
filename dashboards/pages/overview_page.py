@@ -21,7 +21,7 @@ from src.sales_analytics import (
 
 def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dict) -> None:
     st.title("📊 Executive Overview")
-    st.caption("Strategic high-level performance indicators and sales trends.")
+    st.caption("Strategic high-level performance indicators and sales trajectories.")
 
     if sales_df.empty:
         st.warning("No transaction records match the active filter criteria.")
@@ -67,7 +67,7 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
             )
             fig_month.update_traces(line_color="#4F46E5", marker=dict(size=8, color="#818CF8"))
             fig_month.update_layout(template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-            st.plotly_chart(fig_month, use_container_width=True)
+            st.plotly_chart(fig_month, width="stretch")
         else:
             st.info("Insufficient monthly data.")
 
@@ -84,6 +84,6 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
             )
             fig_day.update_traces(line_color="#06B6D4", fillcolor="rgba(6, 182, 212, 0.2)")
             fig_day.update_layout(template="plotly_dark", margin=dict(l=20, r=20, t=40, b=20))
-            st.plotly_chart(fig_day, use_container_width=True)
+            st.plotly_chart(fig_day, width="stretch")
         else:
             st.info("Insufficient daily data.")

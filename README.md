@@ -134,7 +134,7 @@ To add a new view to the dashboard:
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-* Python 3.10+ (tested on Python 3.13)
+* Python 3.10+ (tested on Python 3.13 and Python 3.14)
 * Virtual environment (recommended)
 
 ### 2. Installation
@@ -144,25 +144,30 @@ git clone https://github.com/your-username/RetailPulse-Customer-Analytics-Dashbo
 cd RetailPulse-Customer-Analytics-Dashboard
 
 # Install required dependencies
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
+# (or on Linux/macOS: pip install -r requirements.txt)
 ```
 
 ### 3. Run the Streamlit Dashboard
 ```bash
-streamlit run dashboards/app.py
+# Launch dashboard
+py -m streamlit run dashboards/app.py
+# (or on Linux/macOS: streamlit run dashboards/app.py)
 ```
 Open your browser at `http://localhost:8501`.
 
 ### 4. Running the Test Suite
-The repository includes 23 deterministic unit and smoke tests covering hand-checkable mathematical calculations, schema validation, return isolation, guest retention, and edge cases:
+The repository includes **28 deterministic unit and smoke tests** covering hand-checkable mathematical calculations, schema validation, return isolation, guest customer retention, RFM frequency and recency rules, candidate $k$ evaluations, and regression tests:
 ```bash
-pytest tests/ -v
+py -m pytest -v
+# (or on Linux/macOS: pytest -v)
 ```
 
 ---
 
 ## 🛡️ Limitations & Scientific Governance
-1. **Observational Segmentation**: K-Means clustering groups customers by natural geometry in the feature space; clusters are descriptive segments, not static destiny.
-2. **Silhouette Score**: Quantifies mathematical cluster separation and compactness. A higher score does not imply higher customer profitability or brand affinity.
-3. **Activity Decline**: Decline indicators flag deviations from historical velocity. External factors (such as gift-buying seasonality, inventory stockouts, or channel migration) can cause activity drops without true brand disaffection.
-4. **Marketing Playbooks**: Recommended interventions represent industry best practices for each behavioral profile. All interventions should be measured against randomized holdout control groups.
+1. **Observational Segmentation**: K-Means clustering groups customers by natural geometry in normalized log-space $(\log(R), \log(F), \log(M))$; clusters are descriptive behavioral segments, not predictive churn forecasts or permanent assignments.
+2. **Silhouette Score**: Quantifies geometric cluster separation and compactness relative to nearest neighbors. A higher score does not directly imply higher customer lifetime value, profitability, or brand loyalty.
+3. **Heuristic Activity Decline**: Decline indicators flag deviations from historical velocity and inter-purchase cadence. External macro factors (such as gift-buying seasonality, inventory stockouts, or offline shopping) can trigger flags without genuine customer attrition.
+4. **Marketing Playbooks**: Recommended interventions represent industry best practices for each behavioral profile. All interventions should be measured against randomized holdout control groups (A/B testing) before full commercial rollout.
+5. **Guest / Anonymous Checkout Retention**: Guest orders lack persistent `CustomerID` identifiers and are kept strictly for sales analytics and KPI tracking; they are excluded from customer-level RFM clustering to prevent grouping unrelated anonymous shoppers into artificial centroids.

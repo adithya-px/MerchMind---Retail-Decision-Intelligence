@@ -107,7 +107,7 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
         yaxis_title="Sales Value ($)",
         margin=dict(l=20, r=20, t=40, b=20),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # Anomaly Detail Table
     if not anomalies_only.empty:
@@ -122,5 +122,5 @@ def render(sales_df: pd.DataFrame, customer_df: pd.DataFrame, guest_metrics: dic
                 "Orders": "{:,}",
                 "Date": lambda d: d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d),
             }),
-            use_container_width=True,
+            width="stretch",
         )
