@@ -1,4 +1,4 @@
-# RetailPulse Project - EDA Insights
+# MerchMind Project - EDA Insights
 
 ## Project Overview
 Exploratory Data Analysis was performed on the online retail transactional dataset to understand customer purchasing behavior, revenue patterns, product performance, geographic contribution, and business opportunities.

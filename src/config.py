@@ -1,5 +1,5 @@
 """
-Configuration module for RetailPulse.
+Configuration module for MerchMind.
 Stores column names, non-product stock codes, constants, and default parameters.
 """
 

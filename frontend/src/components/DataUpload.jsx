@@ -56,7 +56,7 @@ export default function DataUpload({ onDatasetLoaded }) {
             <Sparkles size={24} color="#fff" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">RetailPulse</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">MerchMind</h1>
             <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Customer Analytics Dashboard</p>
           </div>
         </div>

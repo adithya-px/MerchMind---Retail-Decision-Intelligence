@@ -1,5 +1,5 @@
 """
-Declining-Activity Detection Engine for RetailPulse.
+Declining-Activity Detection Engine for MerchMind.
 Heuristically flags customers whose purchasing cadence or monetary spend has dropped
 relative to their prior baseline window, and ranks them for marketing re-engagement.
 Clearly designated as a heuristic indicator, not a predictive churn model.

@@ -1,5 +1,5 @@
 """
-Customer Intelligence Engine for RetailPulse: RFM Analysis & K-Means Clustering.
+Customer Intelligence Engine for MerchMind: RFM Analysis & K-Means Clustering.
 Implements log1p skew transform, standard scaling, elbow and silhouette candidate
 evaluation (k=2-8), PCA 2D dimensionality reduction, and profile-based segmentation.
 """

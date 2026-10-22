@@ -1,6 +1,6 @@
-# RetailPulse frontend
+# MerchMind frontend
 
-React + Vite client for the RetailPulse FastAPI analytics backend.
+React + Vite client for the MerchMind FastAPI analytics backend.
 
 ```bash
 cd frontend

@@ -1,5 +1,5 @@
 """
-Daily Sales Anomaly Detection Engine for RetailPulse.
+Daily Sales Anomaly Detection Engine for MerchMind.
 Computes daily positive sales baseline using rolling statistics (median and IQR / z-score),
 flags surges and sudden drops, and provides clear business interpretation.
 """

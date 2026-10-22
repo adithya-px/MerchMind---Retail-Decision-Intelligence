@@ -1,5 +1,5 @@
 """
-Data Cleaning and Preprocessing Pipeline for RetailPulse.
+Data Cleaning and Preprocessing Pipeline for MerchMind.
 Enforces rigorous audit logging of every record modification or exclusion,
 handles cancellations and returns separately, preserves unidentified guest
 transactions for sales analytics, and isolates customer-level datasets.
@@ -61,7 +61,7 @@ def run_cleaning_pipeline(
     raw_df: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, CleaningAuditLogger, Dict[str, Any]]:
     """
-    Executes the comprehensive RetailPulse cleaning pipeline.
+    Executes the comprehensive MerchMind cleaning pipeline.
 
     Returns:
         sales_clean_df: Positive sales transactions for business analytics.

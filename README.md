@@ -1,4 +1,4 @@
-# RetailPulse — Sales Intelligence & Customer Insights Dashboard
+# MerchMind — Sales Intelligence & Customer Insights Dashboard
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688.svg)](https://fastapi.tiangolo.com/)
@@ -6,7 +6,7 @@
 [![Scikit-Learn](https://img.shields.io/badge/scikit--learn-ML-F7931E.svg)](https://scikit-learn.org/)
 [![Tests](https://img.shields.io/badge/pytest-Passing-brightgreen.svg)](https://docs.pytest.org/)
 
-RetailPulse is an end-to-end data science, business intelligence, and customer analytics application designed for retail operators. It bridges raw transaction records, machine learning clustering, and actionable marketing intelligence through a React frontend and FastAPI backend. Analytics and ML code live in `src/` and is reused by the API — it is not rewritten in the UI.
+MerchMind is an end-to-end data science, business intelligence, and customer analytics application designed for retail operators. It bridges raw transaction records, machine learning clustering, and actionable marketing intelligence through a React frontend and FastAPI backend. Analytics and ML code live in `src/` and is reused by the API — it is not rewritten in the UI.
 
 ---
 
@@ -69,7 +69,7 @@ RetailPulse is an end-to-end data science, business intelligence, and customer a
 Data processing and machine learning stay in `src/`. FastAPI exposes those functions as REST endpoints. React components fetch JSON and render charts; they do not invent metrics.
 
 ```text
-RetailPulse_Project/
+MerchMind_Project/
 │
 ├── src/                          # Reused analytics + ML (unchanged calculation core)
 ├── backend/main.py               # FastAPI REST API (upload, analytics, exports)
@@ -101,8 +101,8 @@ REST endpoints: `/api/dataset/upload`, `/api/dataset/status`, `/api/overview`, `
 
 ### 2. Backend
 ```bash
-git clone https://github.com/your-username/RetailPulse-Customer-Analytics-Dashboard.git
-cd RetailPulse-Customer-Analytics-Dashboard
+git clone https://github.com/your-username/MerchMind---Retail-Decision-Intelligence.git
+cd MerchMind---Retail-Decision-Intelligence
 
 py -m pip install -r requirements.txt
 # Linux/macOS: pip install -r requirements.txt

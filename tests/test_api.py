@@ -1,5 +1,5 @@
 """
-API tests for RetailPulse FastAPI endpoints.
+API tests for MerchMind FastAPI endpoints.
 Uses an uploaded real transaction CSV (not dashboard mock numbers).
 """
 

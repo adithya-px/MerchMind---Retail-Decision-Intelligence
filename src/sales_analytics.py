@@ -1,5 +1,5 @@
 """
-Sales analytics and revenue intelligence engine for RetailPulse.
+Sales analytics and revenue intelligence engine for MerchMind.
 Decoupled pure computational module for KPIs, trends, Pareto concentration,
 revenue drivers, and dynamically generated findings.
 """

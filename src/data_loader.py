@@ -1,5 +1,5 @@
 """
-Data loader module for RetailPulse.
+Data loader module for MerchMind.
 Handles CSV and Excel file ingestion, column standardisation, validation,
 and file-hash-keyed caching to Parquet in data/processed/.
 """

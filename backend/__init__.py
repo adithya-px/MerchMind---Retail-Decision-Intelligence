@@ -1,1 +1,1 @@
-# RetailPulse FastAPI backend package
+# MerchMind FastAPI backend package

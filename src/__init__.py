@@ -1,1 +1,1 @@
-"""RetailPulse core package."""
+"""MerchMind core package."""

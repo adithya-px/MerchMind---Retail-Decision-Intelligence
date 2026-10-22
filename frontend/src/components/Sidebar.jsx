@@ -31,7 +31,7 @@ export default function Sidebar({ activeTab, onTabChange, datasetInfo, onReset }
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <p className="font-bold text-sm text-white truncate leading-tight">RetailPulse</p>
+            <p className="font-bold text-sm text-white truncate leading-tight">MerchMind</p>
             <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>Analytics</p>
           </div>
         )}

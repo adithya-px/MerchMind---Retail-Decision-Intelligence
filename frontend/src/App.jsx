@@ -89,7 +89,7 @@ export default function App() {
   if (bootstrapping) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Connecting to RetailPulse API…</p>
+        <p style={{ color: 'var(--text-secondary)' }}>Connecting to MerchMind API…</p>
       </div>
     );
   }

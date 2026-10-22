@@ -1,5 +1,5 @@
 """
-Strategic Marketing Recommendations Engine for RetailPulse.
+Strategic Marketing Recommendations Engine for MerchMind.
 Generates segment-specific marketing and retention strategies derived directly
 from computed cluster metrics and activity trends.
 Disclaimed clearly as heuristic observational strategies, not validated causal effects.

@@ -1,5 +1,5 @@
 """
-RetailPulse — FastAPI Decision Intelligence Backend.
+MerchMind — FastAPI Decision Intelligence Backend.
 Exposes high-performance REST APIs for dataset ingestion, sales analytics,
 RFM customer segmentation, anomaly detection, audit logs, and CSV exports.
 """
@@ -65,7 +65,7 @@ from src.recommendations import generate_recommendations
 # Application & State
 # ---------------------------------------------------------
 app = FastAPI(
-    title="RetailPulse Decision Intelligence API",
+    title="MerchMind Decision Intelligence API",
     description="High-performance analytics & ML backend for retail customer intelligence.",
     version="2.0.0",
 )
@@ -205,7 +205,7 @@ def apply_cohort_filters(
 # ---------------------------------------------------------
 @app.get("/api/health")
 def health_check():
-    return ok({"status": "healthy", "service": "RetailPulse API", "version": "2.0.0"})
+    return ok({"status": "healthy", "service": "MerchMind API", "version": "2.0.0"})
 
 
 @app.get("/api/dataset/status")
@@ -716,26 +716,26 @@ def export_csv(
 
     if export_type == "sales":
         filtered_sales.to_csv(stream, index=False)
-        filename = "retailpulse_filtered_sales.csv"
+        filename = "merchmind_filtered_sales.csv"
     elif export_type == "monthly":
         compute_monthly_trend(filtered_sales).to_csv(stream, index=False)
-        filename = "retailpulse_monthly_sales.csv"
+        filename = "merchmind_monthly_sales.csv"
     elif export_type == "segments":
         rfm_df = compute_rfm_table(filtered_customer)
         if len(rfm_df) < k:
             raise HTTPException(status_code=400, detail=f"Insufficient customers ({len(rfm_df)}) to export {k} clusters.")
         clustered_df, _, _ = fit_kmeans_clustering(rfm_df, n_clusters=k, random_state=RANDOM_SEED)
         clustered_df.to_csv(stream, index=False)
-        filename = f"retailpulse_customer_segments_k{k}.csv"
+        filename = f"merchmind_customer_segments_k{k}.csv"
     elif export_type == "declining":
         declining_df, _ = detect_declining_customers(filtered_customer)
         declining_df.to_csv(stream, index=False)
-        filename = "retailpulse_declining_accounts.csv"
+        filename = "merchmind_declining_accounts.csv"
     elif export_type == "anomalies":
         daily_df, _ = detect_sales_anomalies(filtered_sales)
         anomalies_df = daily_df[daily_df["IsAnomaly"]] if not daily_df.empty else pd.DataFrame()
         anomalies_df.to_csv(stream, index=False)
-        filename = "retailpulse_sales_anomalies.csv"
+        filename = "merchmind_sales_anomalies.csv"
     else:
         raise HTTPException(status_code=400, detail=f"Invalid export type: {export_type}")
 
