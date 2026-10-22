@@ -5,30 +5,30 @@
    Dark theme (default) — the original product palette, unchanged.
    ------------------------------------------------------------------ */
 :root {
-  --bg-primary: #0b0f19;
-  --bg-secondary: #0f172a;
-  --bg-card: #131b2e;
-  --bg-elevated: #1e293b;
-  --border-dim: rgba(148, 163, 184, 0.12);
-  --border-accent: rgba(56, 189, 248, 0.3);
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-cyan: #38bdf8;
-  --accent-purple: #818cf8;
-  --accent-green: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
+  --bg-primary: #071a2d;
+  --bg-secondary: #0c1f38;
+  --bg-card: #102a46;
+  --bg-elevated: #153659;
+  --border-dim: rgba(110, 166, 255, 0.16);
+  --border-accent: rgba(94, 231, 255, 0.38);
+  --text-primary: #edf7ff;
+  --text-secondary: #a4c5f5;
+  --text-muted: #7a9bc7;
+  --accent-cyan: #5ee7ff;
+  --accent-purple: #7aa8ff;
+  --accent-green: #22d3ee;
+  --accent-amber: #7dd3fc;
+  --accent-red: #4ea8ff;
 
   --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --chart-grid: rgba(148, 163, 184, 0.1);
+  --chart-grid: rgba(148, 197, 255, 0.12);
 
-  --link: #38bdf8;
-  --nav-active-bg: rgba(56, 189, 248, 0.12);
-  --nav-active-fg: #38bdf8;
-  --nav-active-border: rgba(56, 189, 248, 0.3);
+  --link: #5ee7ff;
+  --nav-active-bg: rgba(94, 231, 255, 0.12);
+  --nav-active-fg: #5ee7ff;
+  --nav-active-border: rgba(94, 231, 255, 0.32);
 
   --seg-champions-bg: rgba(16, 185, 129, 0.15);  --seg-champions-fg: #10b981;
   --seg-loyal-bg: rgba(56, 189, 248, 0.15);      --seg-loyal-fg: #38bdf8;
