@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Upload, FileSpreadsheet, Sparkles, AlertCircle } from 'lucide-react';
 import { api } from '../api';
+import { Loader } from './ui';
+import ThemeToggle from './ThemeToggle';
 
 export default function DataUpload({ onDatasetLoaded }) {
   const [dragging, setDragging] = useState(false);
@@ -48,11 +50,16 @@ export default function DataUpload({ onDatasetLoaded }) {
   }, [onDatasetLoaded]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={{ background: 'var(--bg-primary)' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative" style={{ background: 'var(--bg-primary)' }}>
+      {/* Theme switch */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       {/* Logo / Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #38bdf8, #818cf8)' }}>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))' }}>
             <Sparkles size={24} color="#fff" />
           </div>
           <div>
@@ -84,14 +91,10 @@ export default function DataUpload({ onDatasetLoaded }) {
             onChange={(e) => handleFile(e.target.files[0])}
           />
           {loading ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-2 border-transparent animate-spin"
-                style={{ borderTopColor: 'var(--accent-cyan)', borderRightColor: 'var(--accent-purple)' }} />
-              <p style={{ color: 'var(--text-secondary)' }}>Processing dataset…</p>
-            </div>
+            <Loader label="Processing dataset…" />
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(56,189,248,0.12)' }}>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--accent-cyan) 14%, transparent)' }}>
                 <Upload size={26} style={{ color: 'var(--accent-cyan)' }} />
               </div>
               <div>
@@ -107,7 +110,7 @@ export default function DataUpload({ onDatasetLoaded }) {
           <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>Required Columns</p>
           <div className="flex flex-wrap gap-2">
             {['InvoiceNo','StockCode','Description','Quantity','InvoiceDate','UnitPrice','CustomerID','Country'].map(col => (
-              <span key={col} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>{col}</span>
+              <span key={col} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--bg-elevated)', color: 'var(--link)', fontFamily: 'monospace' }}>{col}</span>
             ))}
           </div>
         </div>
@@ -119,7 +122,7 @@ export default function DataUpload({ onDatasetLoaded }) {
             onClick={handleDemo}
             disabled={loading}
             className="font-semibold text-sm transition-colors"
-            style={{ color: 'var(--accent-cyan)', background: 'none', border: 'none', cursor: loading ? 'wait' : 'pointer', textDecoration: 'underline' }}
+            style={{ color: 'var(--link)', background: 'none', border: 'none', cursor: loading ? 'wait' : 'pointer', textDecoration: 'underline' }}
           >
             <FileSpreadsheet size={14} style={{ display: 'inline', marginRight: 4 }} />
             Load demo dataset
@@ -129,8 +132,8 @@ export default function DataUpload({ onDatasetLoaded }) {
         {/* Error */}
         {error && (
           <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
-            <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: 2 }} />
-            <p className="text-sm" style={{ color: '#fca5a5' }}>{error}</p>
+            <AlertCircle size={16} style={{ color: 'var(--accent-red)', flexShrink: 0, marginTop: 2 }} />
+            <p className="text-sm" style={{ color: 'var(--accent-red)' }}>{error}</p>
           </div>
         )}
       </div>

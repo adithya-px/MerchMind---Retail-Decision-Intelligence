@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { api } from '../api';
+import { useTheme } from '../theme';
 import { ChartCard, ErrorBanner, Skeleton, DownloadButton, CustomTooltip, fmt } from './ui';
 
 export default function AnomaliesTab({ filters }) {
+  const { chart } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,13 +42,13 @@ export default function AnomaliesTab({ filters }) {
         {loading ? <Skeleton h={280} /> : (
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={daily}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
               <XAxis dataKey="Date" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} interval={Math.max(0, Math.floor(daily.length / 12))} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
               <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-              <Area type="monotone" dataKey="UpperBound" stroke="#f59e0b55" fill="transparent" name="Upper bound" />
-              <Area type="monotone" dataKey="Baseline" stroke="#94a3b8" fill="transparent" name="Baseline" />
-              <Area type="monotone" dataKey="Sales" stroke="#38bdf8" fill="#38bdf822" name="Sales" />
+              <Area type="monotone" dataKey="UpperBound" stroke={chart.upper} fill="transparent" name="Upper bound" />
+              <Area type="monotone" dataKey="Baseline" stroke={chart.baseline} fill="transparent" name="Baseline" />
+              <Area type="monotone" dataKey="Sales" stroke={chart.areaStroke} fill={chart.areaFill} name="Sales" />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -59,7 +61,7 @@ export default function AnomaliesTab({ filters }) {
           <div className="space-y-3" style={{ maxHeight: 420, overflowY: 'auto' }}>
             {anomalies.map((event) => {
               const isSurge = String(event.AnomalyType).toLowerCase().includes('surge');
-              const color = isSurge ? '#f59e0b' : '#ef4444';
+              const color = isSurge ? chart.surge : chart.drop;
               return (
                 <div key={event.Date} className="p-4 rounded-xl" style={{ border: `1px solid ${color}40`, background: `${color}14` }}>
                   <p className="font-semibold text-white">{event.Date} · {event.AnomalyType}</p>

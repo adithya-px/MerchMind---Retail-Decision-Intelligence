@@ -4,9 +4,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
 import { api } from '../api';
+import { useTheme } from '../theme';
 import { ChartCard, ErrorBanner, Skeleton, DownloadButton, CustomTooltip, fmt, fmtPct } from './ui';
 
 export default function SalesTab({ filters }) {
+  const { chart } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,11 +66,11 @@ export default function SalesTab({ filters }) {
         {loading ? <Skeleton h={220} /> : (
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={daily}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
               <XAxis dataKey="Date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} interval={6} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
               <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-              <Area type="monotone" dataKey="PositiveSales" stroke="#38bdf8" strokeWidth={2} fill="#38bdf833" name="Sales" />
+              <Area type="monotone" dataKey="PositiveSales" stroke={chart.areaStroke} strokeWidth={2} fill={chart.areaFill} name="Sales" />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -79,11 +81,11 @@ export default function SalesTab({ filters }) {
           {loading ? <Skeleton h={200} /> : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={hourly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="hour" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(h) => `${h}:00`} />
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
                 <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-                <Bar dataKey="revenue" fill="#818cf8" radius={[3, 3, 0, 0]} name="Revenue" />
+                <Bar dataKey="revenue" fill={chart.bar} radius={[3, 3, 0, 0]} name="Revenue" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -92,11 +94,11 @@ export default function SalesTab({ filters }) {
           {loading ? <Skeleton h={200} /> : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={dowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
                 <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-                <Bar dataKey="revenue" fill="#10b981" radius={[3, 3, 0, 0]} name="Revenue" />
+                <Bar dataKey="revenue" fill={chart.series[2]} radius={[3, 3, 0, 0]} name="Revenue" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -108,11 +110,11 @@ export default function SalesTab({ filters }) {
           {loading ? <Skeleton h={250} /> : (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={topProducts} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
                 <YAxis type="category" dataKey="Description" width={140} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
                 <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-                <Bar dataKey="Value" fill="#38bdf8" radius={[0, 3, 3, 0]} name="Revenue" />
+                <Bar dataKey="Value" fill={chart.barAlt} radius={[0, 3, 3, 0]} name="Revenue" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -129,7 +131,7 @@ export default function SalesTab({ filters }) {
                     <tr key={row.customer_id}>
                       <td style={{ color: 'var(--text-muted)' }}>{i + 1}</td>
                       <td style={{ fontFamily: 'monospace' }}>{row.customer_id}</td>
-                      <td style={{ color: 'var(--accent-green)' }}>{fmt(row.revenue, '£')}</td>
+                      <td style={{ color: chart.positive }}>{fmt(row.revenue, '£')}</td>
                       <td>{row.orders}</td>
                     </tr>
                   ))}
@@ -145,11 +147,11 @@ export default function SalesTab({ filters }) {
           {loading ? <Skeleton h={220} /> : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={countries}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="Country" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
                 <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-                <Bar dataKey="PositiveSales" fill="#f59e0b" radius={[3, 3, 0, 0]} name="Sales" />
+                <Bar dataKey="PositiveSales" fill={chart.series[4]} radius={[3, 3, 0, 0]} name="Sales" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -158,11 +160,11 @@ export default function SalesTab({ filters }) {
           {loading ? <Skeleton h={220} /> : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={data?.pareto?.curve || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="customer_pct" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} unit="%" />
                 <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} unit="%" />
                 <Tooltip content={<CustomTooltip formatter={(v) => `${v}%`} />} />
-                <Line type="monotone" dataKey="revenue_pct" name="Revenue share" stroke="#818cf8" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="revenue_pct" name="Revenue share" stroke={chart.series[1]} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -190,7 +192,7 @@ export default function SalesTab({ filters }) {
                       const value = cell?.PositiveSales || 0;
                       const intensity = value / heatMax;
                       return (
-                        <td key={`${day}-${hour}`} style={{ background: `rgba(56,189,248,${intensity * 0.55})`, textAlign: 'center' }}>
+                        <td key={`${day}-${hour}`} style={{ background: `rgba(${chart.heatRgb},${intensity * 0.55})`, textAlign: 'center' }}>
                           {value ? fmt(value) : ''}
                         </td>
                       );

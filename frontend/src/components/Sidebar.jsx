@@ -26,7 +26,7 @@ export default function Sidebar({ activeTab, onTabChange, datasetInfo, onReset }
       {/* Brand */}
       <div className="flex items-center gap-3 p-4" style={{ borderBottom: '1px solid var(--border-dim)', minHeight: 64 }}>
         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #38bdf8, #818cf8)' }}>
+          style={{ background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-purple))' }}>
           <Sparkles size={18} color="#fff" />
         </div>
         {!collapsed && (
@@ -39,10 +39,10 @@ export default function Sidebar({ activeTab, onTabChange, datasetInfo, onReset }
 
       {/* Dataset Badge */}
       {!collapsed && datasetInfo && (
-        <div className="mx-3 my-3 p-3 rounded-xl" style={{ background: 'rgba(56,189,248,0.07)', border: '1px solid var(--border-accent)' }}>
+        <div className="mx-3 my-3 p-3 rounded-xl" style={{ background: 'color-mix(in srgb, var(--accent-cyan) 8%, transparent)', border: '1px solid var(--border-accent)' }}>
           <div className="flex items-center gap-2 mb-1">
             <span className="status-dot active" />
-            <span className="text-xs font-semibold" style={{ color: 'var(--accent-cyan)' }}>Dataset Active</span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--link)' }}>Dataset Active</span>
           </div>
           <p className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>{datasetInfo.filename}</p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{datasetInfo.rows?.toLocaleString()} rows</p>
@@ -61,9 +61,9 @@ export default function Sidebar({ activeTab, onTabChange, datasetInfo, onReset }
               style={{
                 padding: collapsed ? '10px' : '10px 12px',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                background: active ? 'rgba(56,189,248,0.12)' : 'transparent',
-                color: active ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                border: active ? '1px solid var(--border-accent)' : '1px solid transparent',
+                background: active ? 'var(--nav-active-bg)' : 'transparent',
+                color: active ? 'var(--nav-active-fg)' : 'var(--text-secondary)',
+                border: active ? '1px solid var(--nav-active-border)' : '1px solid transparent',
                 fontWeight: active ? 600 : 500,
                 fontSize: '0.875rem',
                 cursor: 'pointer',

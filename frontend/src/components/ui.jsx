@@ -1,6 +1,6 @@
 // Shared reusable UI primitives
 
-export function KpiCard({ title, value, sub, icon: Icon, color = 'var(--accent-cyan)', loading }) {
+export function KpiCard({ title, value, sub, icon: Icon, color = 'var(--link)', loading }) {
   if (loading) {
     return (
       <div className="kpi-card">
@@ -49,17 +49,28 @@ export function ChartCard({ title, children, style, action }) {
 
 export function ErrorBanner({ message, onRetry }) {
   return (
-    <div className="flex items-center gap-3 p-4 rounded-xl my-4"
-      style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
+    <div className="error-banner">
       <div className="flex-1">
-        <p className="text-sm font-medium" style={{ color: '#fca5a5' }}>⚠ {message}</p>
+        <p className="error-banner__text">⚠ {message}</p>
       </div>
       {onRetry && (
-        <button onClick={onRetry} className="text-xs px-3 py-1.5 rounded-lg font-semibold"
-          style={{ background: 'rgba(239,68,68,0.2)', color: '#fca5a5', border: 'none', cursor: 'pointer' }}>
+        <button onClick={onRetry} className="error-banner__retry">
           Retry
         </button>
       )}
+    </div>
+  );
+}
+
+export function Loader({ label }) {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="loader" aria-hidden="true">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <span key={i} className="loader-square" />
+        ))}
+      </div>
+      {label && <p style={{ color: 'var(--text-secondary)' }}>{label}</p>}
     </div>
   );
 }
@@ -103,17 +114,7 @@ export function FilterSelect({ label, value, onChange, options, disabled }) {
 
 export function DownloadButton({ href, label }) {
   return (
-    <a
-      href={href}
-      download
-      className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
-      style={{
-        background: 'rgba(56,189,248,0.1)',
-        color: 'var(--accent-cyan)',
-        border: '1px solid var(--border-accent)',
-        textDecoration: 'none',
-      }}
-    >
+    <a href={href} download className="download-btn">
       ↓ {label}
     </a>
   );
@@ -125,7 +126,7 @@ export function CustomTooltip({ active, payload, label, formatter }) {
     <div className="custom-tooltip">
       <p className="font-semibold mb-1 text-xs" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       {payload.map((entry, i) => (
-        <p key={i} style={{ color: entry.color || 'var(--accent-cyan)' }}>
+        <p key={i} style={{ color: entry.color || 'var(--text-primary)' }}>
           {entry.name}: <strong>{formatter ? formatter(entry.value) : entry.value}</strong>
         </p>
       ))}
@@ -133,22 +134,26 @@ export function CustomTooltip({ active, payload, label, formatter }) {
   );
 }
 
+const SEGMENT_TOKENS = {
+  'Champions': 'champions',
+  'Champions (Top Tier)': 'champions',
+  'Loyal Customers': 'loyal',
+  'High-Value Core': 'loyal',
+  'Promising High-Spenders': 'promising',
+  'Recent New Customers': 'recent',
+  'At Risk': 'risk',
+  'At Risk / Slipping': 'risk',
+  'Hibernating': 'hibernate',
+  'Hibernating / Inactive': 'hibernate',
+};
+
 export function SegmentBadge({ segment }) {
-  const COLORS = {
-    'Champions': { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-    'Champions (Top Tier)': { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
-    'Loyal Customers': { bg: 'rgba(56,189,248,0.15)', color: '#38bdf8' },
-    'High-Value Core': { bg: 'rgba(56,189,248,0.15)', color: '#38bdf8' },
-    'Promising High-Spenders': { bg: 'rgba(129,140,248,0.15)', color: '#818cf8' },
-    'Recent New Customers': { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24' },
-    'At Risk': { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
-    'At Risk / Slipping': { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
-    'Hibernating': { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8' },
-    'Hibernating / Inactive': { bg: 'rgba(100,116,139,0.15)', color: '#94a3b8' },
-  };
-  const style = COLORS[segment] || { bg: 'rgba(148,163,184,0.12)', color: 'var(--text-secondary)' };
+  const key = SEGMENT_TOKENS[segment] || 'neutral';
   return (
-    <span className="segment-badge" style={{ background: style.bg, color: style.color }}>
+    <span
+      className="segment-badge"
+      style={{ background: `var(--seg-${key}-bg)`, color: `var(--seg-${key}-fg)` }}
+    >
       {segment}
     </span>
   );

@@ -10,7 +10,8 @@ import DecliningTab from './components/DecliningTab';
 import RecommendationsTab from './components/RecommendationsTab';
 import AuditTab from './components/AuditTab';
 import ExportsTab from './components/ExportsTab';
-import { ErrorBanner, FilterSelect } from './components/ui';
+import ThemeToggle from './components/ThemeToggle';
+import { ErrorBanner, FilterSelect, Loader } from './components/ui';
 
 const TABS = {
   overview: OverviewTab,
@@ -89,7 +90,7 @@ export default function App() {
   if (bootstrapping) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Connecting to MerchMind API…</p>
+        <Loader label="Connecting to MerchMind API…" />
       </div>
     );
   }
@@ -128,6 +129,7 @@ export default function App() {
             <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Active cohort</p>
             <h1 className="text-lg font-bold text-white truncate">{dataset.filename}</h1>
           </div>
+          <ThemeToggle />
           <label className="flex flex-col gap-1">
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Start</span>
             <input

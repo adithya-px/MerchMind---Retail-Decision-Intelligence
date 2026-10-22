@@ -3,11 +3,12 @@ import {
   ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar,
 } from 'recharts';
 import { api } from '../api';
+import { useTheme } from '../theme';
 import { ChartCard, ErrorBanner, Skeleton, DownloadButton, SegmentBadge, fmt, fmtPct } from './ui';
 
-const COLORS = ['#38bdf8', '#818cf8', '#10b981', '#f59e0b', '#ef4444', '#e879f9', '#fb923c'];
-
 export default function SegmentsTab({ filters, k }) {
+  const { chart } = useTheme();
+  const COLORS = chart.series;
   const [data, setData] = useState(null);
   const [diagnostics, setDiagnostics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ export default function SegmentsTab({ filters, k }) {
           {loading ? <Skeleton h={260} /> : (
             <ResponsiveContainer width="100%" height={260}>
               <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="PCA1" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} name="PCA1" />
                 <YAxis dataKey="PCA2" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} name="PCA2" />
                 <Tooltip content={({ active, payload }) => {
@@ -103,11 +104,11 @@ export default function SegmentsTab({ filters, k }) {
           {loading ? <Skeleton h={260} /> : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={silhouette}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="k" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
                 <YAxis domain={[0, 1]} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
                 <Tooltip />
-                <Bar dataKey="SilhouetteScore" fill="#818cf8" radius={[3, 3, 0, 0]} name="Silhouette" />
+                <Bar dataKey="SilhouetteScore" fill={chart.bar} radius={[3, 3, 0, 0]} name="Silhouette" />
               </BarChart>
             </ResponsiveContainer>
           )}

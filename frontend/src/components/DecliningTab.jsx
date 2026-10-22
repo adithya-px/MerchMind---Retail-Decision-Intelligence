@@ -29,7 +29,7 @@ export default function DecliningTab({ filters }) {
       {error && <ErrorBanner message={error} onRetry={load} />}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="kpi-card"><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Flagged</p><p className="text-2xl font-extrabold" style={{ color: '#ef4444' }}>{summary.flagged_declining ?? '—'}</p></div>
+        <div className="kpi-card"><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Flagged</p><p className="text-2xl font-extrabold" style={{ color: 'var(--accent-red)' }}>{summary.flagged_declining ?? '—'}</p></div>
         <div className="kpi-card"><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Eligible</p><p className="text-2xl font-extrabold">{summary.eligible_customers ?? '—'}</p></div>
         <div className="kpi-card"><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Avg drop</p><p className="text-2xl font-extrabold">{fmtPct(summary.avg_drop_pct)}</p></div>
         <div className="kpi-card"><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Revenue at risk</p><p className="text-2xl font-extrabold">{fmt(summary.revenue_at_risk, '£')}</p></div>
@@ -57,7 +57,7 @@ export default function DecliningTab({ filters }) {
                     <td style={{ fontFamily: 'monospace' }}>{row.CustomerID}</td>
                     <td>{fmt(row.PriorSpend, '£')}</td>
                     <td>{fmt(row.RecentSpend, '£')}</td>
-                    <td style={{ color: '#ef4444' }}>{fmtPct(row.VelocityDropPct)}</td>
+                    <td style={{ color: 'var(--accent-red)' }}>{fmtPct(row.VelocityDropPct)}</td>
                     <td>{row.DaysSinceLastPurchase}d</td>
                     <td style={{ color: 'var(--text-secondary)' }}>{row.Reason}</td>
                   </tr>

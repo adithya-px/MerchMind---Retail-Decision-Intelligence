@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
 import { api } from '../api';
+import { useTheme } from '../theme';
 import { KpiCard, ChartCard, ErrorBanner, Skeleton, DownloadButton, CustomTooltip, fmt, fmtPct } from './ui';
 
 function plainInsight(text) {
@@ -11,6 +12,7 @@ function plainInsight(text) {
 }
 
 export default function OverviewTab({ filters }) {
+  const { chart } = useTheme();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,20 +41,20 @@ export default function OverviewTab({ filters }) {
       {error && <ErrorBanner message={error} onRetry={load} />}
 
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard loading={loading} icon={DollarSign} title="Positive sales" color="#10b981"
+        <KpiCard loading={loading} icon={DollarSign} title="Positive sales" color={chart.kpi[0]}
           value={fmt(kpis.total_positive_sales, '£')}
           sub={`AOV ${fmt(kpis.avg_order_value, '£')}`} />
-        <KpiCard loading={loading} icon={ShoppingCart} title="Distinct invoices" color="#38bdf8"
+        <KpiCard loading={loading} icon={ShoppingCart} title="Distinct invoices" color={chart.kpi[1]}
           value={fmt(kpis.distinct_invoices)}
           sub={`${fmt(kpis.total_quantity)} units`} />
-        <KpiCard loading={loading} icon={Users} title="Identified customers" color="#818cf8"
+        <KpiCard loading={loading} icon={Users} title="Identified customers" color={chart.kpi[2]}
           value={fmt(kpis.unique_customers)} />
-        <KpiCard loading={loading} icon={Package} title="Distinct products" color="#f59e0b"
+        <KpiCard loading={loading} icon={Package} title="Distinct products" color={chart.kpi[3]}
           value={fmt(kpis.distinct_products)} />
-        <KpiCard loading={loading} icon={TrendingUp} title="Pareto (top 20%)" color="#e879f9"
+        <KpiCard loading={loading} icon={TrendingUp} title="Pareto (top 20%)" color={chart.kpi[4]}
           value={fmtPct(data?.pareto_share)}
           sub="of identified customer revenue" />
-        <KpiCard loading={loading} icon={UserMinus} title="Guest invoices" color="#fb923c"
+        <KpiCard loading={loading} icon={UserMinus} title="Guest invoices" color={chart.kpi[5]}
           value={fmt(kpis.guest_orders)} />
       </div>
 
@@ -61,11 +63,11 @@ export default function OverviewTab({ filters }) {
           {loading ? <Skeleton h={220} /> : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={monthly}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis dataKey="YearMonth" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
                 <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickFormatter={(v) => fmt(v, '£')} />
                 <Tooltip content={<CustomTooltip formatter={(v) => fmt(v, '£')} />} />
-                <Line type="monotone" dataKey="PositiveSales" name="Sales" stroke="#38bdf8" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="PositiveSales" name="Sales" stroke={chart.line} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
