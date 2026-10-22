@@ -74,7 +74,6 @@ RetailPulse_Project/
 ├── src/                          # Reused analytics + ML (unchanged calculation core)
 ├── backend/main.py               # FastAPI REST API (upload, analytics, exports)
 ├── frontend/                     # React + Vite + Tailwind + Recharts
-├── dashboards/                   # Legacy Streamlit app (optional; not required to run)
 ├── tests/                        # Analytics unit tests + API endpoint tests
 ├── data/raw/                     # Optional UCI Online Retail CSV/XLSX for the demo loader
 ├── requirements.txt
@@ -130,11 +129,6 @@ Upload a CSV/XLSX with columns `InvoiceNo, StockCode, Description, Quantity, Inv
 py -m pytest -v
 ```
 Analytics tests cover cleaning, KPIs, RFM/K-Means, declining activity, and anomalies. `tests/test_api.py` uploads a schema-valid transaction CSV and asserts overview, sales, segments, exports, and related endpoints.
-
-### 5. Legacy Streamlit app (optional)
-```bash
-py -m streamlit run dashboards/app.py
-```
 
 ---
 

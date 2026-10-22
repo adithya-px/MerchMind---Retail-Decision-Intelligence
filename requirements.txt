@@ -8,7 +8,5 @@ fastapi
 uvicorn[standard]
 python-multipart
 httpx
-streamlit
-plotly
 matplotlib
 seaborn

@@ -11,5 +11,7 @@ venv/
 # Processed & Cache
 data/processed/
 .pytest_cache/
-.streamlit/
 *.parquet
+
+# Freebuff workspace metadata
+.freebuff/
