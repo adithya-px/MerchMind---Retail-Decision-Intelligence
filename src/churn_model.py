@@ -12,8 +12,9 @@ Supervised customer-level models built on a snapshot design:
 * The label is 1 when an identified customer who purchased inside the lookback
   window has no valid sales invoice in the ``horizon_days`` after the cutoff.
 * Cutoffs are always derived from the data: the test cutoff is
-  ``dataset_end - horizon_days`` and the training cutoffs are spaced
-  ``spacing_days`` apart before it.
+  ``dataset_end - horizon_days``; training cutoffs step back ``spacing_days`` at a
+  time from ``test_cutoff - horizon_days``, so every training label window ends on
+  or before the test cutoff and can never cover the test label period.
 
 A small spend regressor (log1p spend in the horizon window) exists only to
 support the expected-revenue-at-risk outreach ranking. Every model uses fixed
@@ -88,6 +89,10 @@ FEATURE_COLUMNS: List[str] = [
 ]
 
 SPEND_EXTRA_COLUMN = "spend_last_90"
+
+# Momentum features compare the last 60 days with the 60 days before that. This
+# is still strictly pre-cutoff history, and drive the required-span calculation.
+MOMENTUM_WINDOW_DAYS = 60
 
 SNAPSHOT_COLUMNS: List[str] = (
     [COL_CUST] + FEATURE_COLUMNS + ["label", "spend_next_90", SPEND_EXTRA_COLUMN, "cutoff"]
@@ -188,9 +193,9 @@ def build_snapshot(
         end = cutoff - pd.Timedelta(days=end_days)
         return history[(history[COL_DATE] > start) & (history[COL_DATE] <= end)]
 
-    last_60 = _window(60, 0)
-    prev_60 = _window(120, 60)
-    last_90 = _window(90, 0)
+    last_60 = _window(MOMENTUM_WINDOW_DAYS, 0)
+    prev_60 = _window(2 * MOMENTUM_WINDOW_DAYS, MOMENTUM_WINDOW_DAYS)
+    last_90 = _window(PREDICTIVE_HORIZON_DAYS, 0)
 
     spend_60 = last_60.groupby(COL_CUST)[COL_LINE_REVENUE].sum()
     spend_prev_60 = prev_60.groupby(COL_CUST)[COL_LINE_REVENUE].sum()
@@ -278,6 +283,9 @@ def derive_cutoffs(
 
     Returns ``{"ok": bool, "reason": str|None, "test_cutoff": Timestamp,
     "train_cutoffs": [Timestamp, ...]}``. Training cutoffs are listed oldest first.
+
+    Guarantee: ``cutoff + horizon_days <= test_cutoff`` for every training cutoff,
+    so no training label window overlaps the test label window.
     """
     if customer_df is None or len(customer_df) == 0:
         return {"ok": False, "reason": "No transactions available.", "train_cutoffs": [], "test_cutoff": None}
@@ -287,14 +295,20 @@ def derive_cutoffs(
     data_end = dates.max().normalize()
     span_days = int((data_end - data_start).days)
 
-    required_span = lookback_days + horizon_days + spacing_days * max(0, n_train_cutoffs - 1)
+    horizon = pd.Timedelta(days=horizon_days)
+    gap_days = spacing_days * max(0, n_train_cutoffs - 1)
+    # The momentum features compare the last 60 days with the 60 before it, so a
+    # "full" feature history is the wider of the lookback and that 120-day span.
+    feature_history_days = max(lookback_days, 2 * MOMENTUM_WINDOW_DAYS)
+    required_span = 2 * horizon_days + gap_days + feature_history_days
     if span_days < required_span:
         return {
             "ok": False,
             "reason": (
                 f"Dataset spans {span_days} days; the snapshot design needs at least "
-                f"{required_span} days ({lookback_days}d lookback + {horizon_days}d label "
-                f"window + {spacing_days * max(0, n_train_cutoffs - 1)}d between train cutoffs)."
+                f"{required_span} days ({horizon_days}d test label window + {horizon_days}d "
+                f"gap so training labels never overlap it + {gap_days}d between train cutoffs "
+                f"+ {feature_history_days}d of feature history)."
             ),
             "train_cutoffs": [],
             "test_cutoff": None,
@@ -303,12 +317,21 @@ def derive_cutoffs(
             "span_days": span_days,
         }
 
-    test_cutoff = data_end - pd.Timedelta(days=horizon_days)
-    train_cutoffs = [
-        test_cutoff - pd.Timedelta(days=spacing_days * (i + 1))
+    test_cutoff = data_end - horizon
+
+    # ------------------------------------------------------------------
+    # No temporal leakage: a training snapshot's label window must end at or
+    # before the test cutoff. Otherwise its label would be derived from
+    # transactions inside the test label window, and the held-out evaluation
+    # would be scoring models that already saw the answer.
+    # ------------------------------------------------------------------
+    latest_train_cutoff = test_cutoff - horizon
+    train_cutoffs = sorted(
+        latest_train_cutoff - pd.Timedelta(days=spacing_days * i)
         for i in range(n_train_cutoffs)
-    ]
-    train_cutoffs = sorted(train_cutoffs)
+    )
+    # Defence in depth: never return a cutoff whose label window crosses the test cutoff.
+    train_cutoffs = [c for c in train_cutoffs if c + horizon <= test_cutoff]
 
     return {
         "ok": True,

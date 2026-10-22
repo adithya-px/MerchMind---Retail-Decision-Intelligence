@@ -57,7 +57,7 @@ MerchMind is an end-to-end data science, business intelligence, and customer ana
 * **Surge & Drop Alerts**: Distinguishes volume spikes from sudden demand plunges with clear operational investigation guidance.
 
 ### 7. Predictive Analytics — Churn Model & Outreach Ranking
-* **Snapshot Design**: Customers are described at cutoffs derived from the data (test cutoff = dataset end − 90 days, two training cutoffs 30 days apart before it). Features use only the 180 days before each cutoff; the label uses the 90 days after it.
+* **Snapshot Design**: Customers are described at cutoffs derived from the data (test cutoff = dataset end − 90 days; training cutoffs step back 30 days from `test cutoff − 90 days`, so no training label window reaches into the test window). Features use only the 90 days before each cutoff; the label uses the 90 days after it.
 * **Honest Evaluation**: Dummy, the existing decline heuristic, Logistic Regression, Random Forest, and XGBoost are scored on the same held-out future cutoff with ROC-AUC, PR-AUC, precision/recall/F1 at a validation-chosen threshold, and top-decile lift.
 * **Expected Revenue at Risk**: `P(inactive) × predicted 90-day spend`, ranked into a contact list with a list-size slider, coverage share, and CSV export.
 * **Cached Fits**: A fitted pipeline is cached with joblib per dataset hash, so the tab loads in well under a second after the first fit.
@@ -95,29 +95,35 @@ REST endpoints: `/api/dataset/upload`, `/api/dataset/status`, `/api/overview`, `
 
 The **Predictive** tab is a supervised layer, not a re-labelled heuristic. Code lives in `src/churn_model.py`.
 
-**Label.** At a cutoff date, a customer is *eligible* if they have at least one valid (non-cancelled, non-fee, positive-price) sales invoice in the preceding 180 days. The label is **1** when an eligible customer has **no** valid sales invoice in the 90 days after the cutoff, and **0** otherwise. Eligibility keeps the cohort to customers with recent signal; customers who stop buying before the lookback starts are not scored.
+**Label.** At a cutoff date, a customer is *eligible* if they have at least one valid (non-cancelled, non-fee, positive-price) sales invoice in the preceding 90 days. The label is **1** when an eligible customer has **no** valid sales invoice in the 90 days after the cutoff, and **0** otherwise. Eligibility keeps the cohort to customers with recent signal; customers who stop buying before the lookback starts are not scored.
 
-**Validation design.** Cutoffs come from the data, never hardcoded: the test cutoff is `dataset end − 90 days` (so its label window ends exactly at the dataset end) and two training cutoffs sit 30 and 60 days before it. All models are fit on the pooled training snapshots and scored **once** on the test cutoff. Decision thresholds are chosen by F1 on a 30% validation split carved out of the *training* cutoffs, then each model is refit on all training snapshots — the test set never influences a threshold or a hyperparameter. Hyperparameters are fixed (no search); seeds are fixed.
+**Validation design (leak-free by construction).** Cutoffs come from the data, never hardcoded:
 
-**Results on the official UCI Online Retail dataset** (test cutoff 2011-09-10, 2,783 eligible customers, 38.2% inactivity rate):
+* Test cutoff = `dataset end − 90 days` (2011-09-10), so its label window ends exactly at the dataset end.
+* Training cutoffs step back 30 days at a time from `test cutoff − 90 days`: **2011-06-12** and **2011-05-13**. Their label windows end 2011-09-10 and 2011-08-11, i.e. `cutoff + 90 days <= test cutoff` for every training cutoff. No training label is ever built from the test label period; this is enforced in `derive_cutoffs()` and covered by `test_training_label_windows_never_overlap_the_test_cutoff`.
+* The lookback is 90 days so the earliest cutoff still has full feature history (the 60-vs-60 momentum pair reaches 120 days back, still strictly before the cutoff).
+
+All models are fit on the pooled training snapshots and scored **once** on the test cutoff. Decision thresholds — and the choice of the selected model — use a 30% validation split carved out of the *training* cutoffs, then each model is refit on all training snapshots. The test set influences neither a threshold nor a hyperparameter; hyperparameters are fixed (no search) and seeds are fixed.
+
+**Results on the official UCI Online Retail dataset** (test cutoff 2011-09-10, 1,903 eligible customers, 31.0% inactivity rate, 90-day lookback):
 
 | Model | ROC-AUC | PR-AUC | Precision | Recall | F1 | Top-decile lift |
 |---|---|---|---|---|---|---|
-| Random Forest | 0.758 | 0.621 | 0.52 | 0.86 | 0.64 | 1.85× |
-| XGBoost | 0.754 | 0.620 | 0.52 | 0.84 | 0.64 | 1.78× |
-| Logistic Regression | 0.739 | 0.585 | 0.53 | 0.80 | 0.63 | 1.66× |
-| Decline rule (existing heuristic) | 0.617 | 0.476 | 0.42 | 0.79 | 0.55 | 1.40× |
-| Dummy (prior probability) | 0.500 | 0.382 | 0.38 | 1.00 | 0.55 | 0.89× |
+| Logistic Regression | 0.741 | 0.513 | 0.48 | 0.66 | 0.56 | 1.78× |
+| Random Forest *(selected)* | 0.733 | 0.512 | 0.44 | 0.83 | 0.57 | 1.92× |
+| XGBoost | 0.725 | 0.510 | 0.45 | 0.71 | 0.55 | 1.83× |
+| Decline rule (existing heuristic) | 0.566 | 0.361 | 0.33 | 0.75 | 0.46 | 1.19× |
+| Dummy (prior probability) | 0.500 | 0.310 | 0.31 | 1.00 | 0.47 | 0.90× |
 
-Random Forest is the selected model (threshold 0.38) and beats the decline heuristic by ~0.14 ROC-AUC. It beats logistic regression by only 0.019 ROC-AUC and ~0.005 F1 — on a single time split that is a statistical tie, so the README does not claim the ensemble is necessary. The strongest permutation-importance features are tenure, 180-day spend, order count and distinct products.
+Random Forest was selected on **validation** ROC-AUC (0.758 vs 0.756 for logistic regression — a 0.002 gap). On the held-out test cutoff the order reverses: logistic regression edges it by 0.008 ROC-AUC, while the forest keeps the higher F1 (0.57 vs 0.56) and the best top-decile lift (1.92×). On one time split these gaps are noise, and the ensembles add nothing over the simpler linear model — the ranking is effectively as good as a linear score. Every learned model still beats the decline heuristic (0.566). The strongest permutation-importance features are tenure, order count, 90-day spend and recency.
 
-**Spend model.** An XGBoost regressor predicts `log1p(spend in the next 90 days)` from the same snapshot features, purely to weight the outreach list. Against the persistence baseline ("assume they repeat the last 90 days") it improves MAE from £679 to £630 (+7.3%) and Spearman correlation from 0.441 to 0.575. That is a modest edge, which is why it is used as a ranking weight rather than reported as a revenue forecast.
+**Spend model.** An XGBoost regressor predicts `log1p(spend in the next 90 days)` from the same snapshot features, purely to weight the outreach list. Against the persistence baseline ("assume they repeat the last 90 days") **it does not win on absolute error**: MAE £882 vs £842 for the baseline (−4.7%). It does rank customers better (Spearman 0.554 vs 0.515). Because the forecast is not more accurate in currency terms, it is used only as a relative ranking weight, and the expected-revenue-at-risk column inherits that weaker assumption.
 
-**Expected revenue at risk.** `P(inactive) × predicted 90-day spend` ranks customers for contact. On the held-out cutoff the total is ~£95.5K of expected revenue at risk, and contacting the top 200 customers covers ~49% of it.
+**Expected revenue at risk.** `P(inactive) × predicted 90-day spend` ranks customers for contact. On the held-out cutoff the total is ~£65.4K of expected revenue at risk, and contacting the top 200 customers covers ~46% of it.
 
-**Limitations.** Only one year of transactions exists, so there are three cutoffs and the metrics come from a single time split; treat the differences between models as indicative. The model predicts who is likely to go quiet, not what a campaign would change — this is predictive signal, not a causal effect. Customers inactive before the lookback window are outside the cohort. Invoice dates near the dataset end have a shorter observed outcome window than the full 90 days. The pipeline refuses to train when only one outcome class is present or fewer than 50 customers qualify, and the UI states why instead of showing empty charts.
+**Limitations.** Only one year of transactions exists, so there are three cutoffs and the metrics come from a single time split; treat the differences between models as indicative. Training labels end before the test window (no overlap), but the training cutoffs are only 30 and 60 days before the test cutoff, so the model learns from a period close to the evaluation period. The model predicts who is likely to go quiet, not what a campaign would change — this is predictive signal, not a causal effect. Customers inactive before the lookback window are outside the cohort. Invoice dates near the dataset end have a shorter observed outcome window than the full 90 days. The pipeline refuses to train when only one outcome class is present or fewer than 50 customers qualify, and the UI states why instead of showing empty charts.
 
-Reproduce the checks with `py -m pytest tests/test_churn_model.py -v` (label construction, no-leakage from post-cutoff transactions, and graceful degradation for a single class / too few customers).
+Reproduce the checks with `py -m pytest tests/test_churn_model.py -v` (label construction, no training/test label-window overlap, no leakage from post-cutoff transactions, and graceful degradation for a single class / too few customers).
 
 ---
 

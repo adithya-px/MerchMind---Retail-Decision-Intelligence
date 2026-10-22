@@ -17,8 +17,8 @@ import { ChartCard, ErrorBanner, Skeleton, DownloadButton, CustomTooltip, fmt, f
 
 const FEATURE_LABELS = {
   log_recency: 'Days since last purchase (log)',
-  log_frequency: 'Orders in 180d (log)',
-  log_monetary: 'Spend in 180d (log)',
+  log_frequency: 'Orders in 90d (log)',
+  log_monetary: 'Spend in 90d (log)',
   avg_order_value: 'Average order value',
   tenure_days: 'Customer tenure (days)',
   median_gap_days: 'Typical days between orders',
@@ -118,8 +118,9 @@ export default function PredictiveTab() {
         <h2 className="font-bold text-white">Predictive analytics unavailable for this dataset</h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{data?.message || 'Not enough history to build snapshots.'}</p>
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          The model needs a 180-day feature window plus a 90-day outcome window, and two training
-          cutoffs spaced 30 days apart. Load the full Online Retail dataset to see the evaluation.
+          The model needs a 90-day feature window, a 90-day gap so training labels never overlap the
+          test window, a 90-day outcome window, and two training cutoffs spaced 30 days apart. Load
+          the full Online Retail dataset to see the evaluation.
         </p>
         <button onClick={load} className="download-btn" type="button">Retry</button>
       </div>
@@ -132,7 +133,8 @@ export default function PredictiveTab() {
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Snapshot test cutoff <strong className="text-white">{meta.test_cutoff}</strong> · trained on{' '}
           {meta.train_cutoffs?.join(' and ')} · {meta.n_test_customers?.toLocaleString()} customers scored.
-          Built on the full loaded dataset; the header date/country filters do not apply here.
+          Every training label window ends on or before the test cutoff, so no training label covers the
+          test period. Built on the full loaded dataset; the header date/country filters do not apply here.
         </p>
         <div className="flex gap-2">
           <button onClick={load} className="download-btn" type="button" style={{ background: 'transparent' }}>↻ Refresh</button>
@@ -219,9 +221,10 @@ export default function PredictiveTab() {
           </table>
         </div>
         <p style={captionStyle}>
-          Every threshold was chosen on a 30% validation split of the training cutoffs, then each model
-          was refit on all training snapshots and scored once on the test cutoff — the test set never
-          influenced the threshold.
+          Every threshold — and the choice of the selected model itself — used a 30% validation split of
+          the training cutoffs, then each model was refit on all training snapshots and scored once on the
+          test cutoff. The test set never influenced a threshold or the selection, so a model can rank
+          differently here than the order in which models were chosen.
         </p>
       </ChartCard>
 
@@ -343,10 +346,14 @@ export default function PredictiveTab() {
           </div>
         </div>
         <p style={captionStyle}>
-          {spend.model} predicts spend in the next {meta.horizon_days} days. It beats the
-          &quot;assume they repeat the last 90 days&quot; baseline by{' '}
-          {spend.skill_vs_baseline_pct != null ? `${spend.skill_vs_baseline_pct.toFixed(1)}%` : '—'} MAE;
-          the modest margin is why this forecast is only used to weight the outreach list.
+          {spend.model} predicts spend in the next {meta.horizon_days} days.{' '}
+          {spend.skill_vs_baseline_pct != null && spend.skill_vs_baseline_pct >= 0
+            ? `It beats the "assume they repeat the last 90 days" baseline by ${spend.skill_vs_baseline_pct.toFixed(1)}% MAE.`
+            : `It does not beat the "assume they repeat the last 90 days" baseline on MAE (${Math.abs(spend.skill_vs_baseline_pct ?? 0).toFixed(1)}% worse).`}{' '}
+          Its Spearman correlation ({spend.spearman?.toFixed(2) ?? '—'}) is{' '}
+          {spend.spearman != null && spend.baseline_spearman != null && spend.spearman > spend.baseline_spearman ? 'higher' : 'not higher'}{' '}
+          than the baseline&apos;s ({spend.baseline_spearman?.toFixed(2) ?? '—'}), which is why this forecast is
+          used only to weight the outreach list, not reported as a revenue forecast.
         </p>
       </ChartCard>
 
@@ -393,7 +400,7 @@ export default function PredictiveTab() {
                 <th>Expected at risk</th>
                 <th>Cumulative share</th>
                 <th>Recency</th>
-                <th>Orders (180d)</th>
+                <th>Orders (90d)</th>
               </tr>
             </thead>
             <tbody>
@@ -421,16 +428,6 @@ export default function PredictiveTab() {
         </p>
       </ChartCard>
 
-      <div className="glass-card p-5">
-        <h3 className="font-semibold text-sm text-white mb-2">Limitations</h3>
-        <ul className="text-sm space-y-1.5 list-disc pl-5" style={{ color: 'var(--text-secondary)' }}>
-          <li>One year of transactions, so there are only three cutoffs and metrics come from a single time split — they carry meaningful uncertainty.</li>
-          <li>Predictions describe who is likely to go quiet, not what would happen if you contacted them: this is predictive signal, not causal effect.</li>
-          <li>Customers who stopped buying before the lookback window start are not scored, so the base rate is a cohort rate rather than the whole customer base.</li>
-          <li>Invoices near the end of the dataset have a shorter observed outcome window than the full {meta.horizon_days} days if the data is truncated.</li>
-          {data?.warnings?.map((warning) => <li key={warning}>{warning}</li>)}
-        </ul>
-      </div>
     </div>
   );
 }

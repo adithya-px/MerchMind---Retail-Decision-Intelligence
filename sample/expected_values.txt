@@ -1,0 +1,21 @@
+RetailPulse synthetic sample: expected values under this policy
+Policy: drop exact duplicates; drop missing dates; cancellations = InvoiceNo starts with C OR Quantity < 0;
+exclude price <= 0; exclude non-merchandise codes ['B', 'BANK CHARGES', 'D', 'DOT', 'M', 'POST']; guests kept for sales, excluded from RFM.
+
+Raw rows                         : 21870
+Exact duplicate rows removed     : 45
+Missing InvoiceDate rows         : 3
+Cancellation / negative-qty rows : 386
+Zero/negative price rows (after cancellations removed): 10
+Non-merchandise rows (after the above)                : 495
+Rows kept for sales analysis     : 20931
+
+Total positive sales value       : 548,788.53
+Distinct sales invoices          : 2719
+Unique identified customers      : 380
+Distinct products                : 70
+Average order value              : 201.83
+Guest revenue share              : 7.3%
+Date range of kept sales         : 2010-12-01 10:16:00 to 2011-12-09 16:38:00
+Spike day 2011-06-14 revenue     : 54,812.31  (typical day median: 1,491.23)
+Drop day  2011-05-17 revenue     : 15.04

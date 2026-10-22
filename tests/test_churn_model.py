@@ -9,7 +9,9 @@ import pytest
 
 from src.churn_model import (
     FEATURE_COLUMNS,
+    build_all_snapshots,
     build_snapshot,
+    derive_cutoffs,
     run_predictive_pipeline,
 )
 
@@ -133,12 +135,49 @@ def _long_history_frame(customers, include_horizon_purchase=True):
     for index, customer in enumerate(customers):
         rows += _expand(
             [customer],
-            ["2020-01-05", "2020-06-01", "2020-08-01", "2020-10-01", "2020-11-10"],
+            ["2019-12-01", "2020-06-01", "2020-08-01", "2020-10-01", "2020-11-10"],
             start_invoice=1000 + index * 10,
         )
         if include_horizon_purchase:
             rows += _expand([customer], ["2020-12-20"], start_invoice=8000 + index * 10)
     return _frame(rows)
+
+
+def test_training_label_windows_never_overlap_the_test_cutoff():
+    """
+    Regression guard for temporal leakage: every training snapshot's 90-day label
+    window must end on or before the test cutoff, otherwise the training labels
+    are built from the very period the test set is meant to be held out from.
+    """
+    df = _long_history_frame([f"C{i:03d}" for i in range(20)], include_horizon_purchase=True)
+
+    cutoffs = derive_cutoffs(
+        df, lookback_days=90, horizon_days=90, n_train_cutoffs=2, spacing_days=30
+    )
+    assert cutoffs["ok"]
+
+    test_cutoff = cutoffs["test_cutoff"]
+    horizon = pd.Timedelta(days=90)
+    assert len(cutoffs["train_cutoffs"]) == 2
+
+    for cutoff in cutoffs["train_cutoffs"]:
+        assert cutoff + horizon <= test_cutoff, (
+            f"training label window for {cutoff} extends into the test label window"
+        )
+
+    # Latest training cutoff sits exactly one horizon before the test cutoff.
+    assert cutoffs["train_cutoffs"][-1] == test_cutoff - horizon
+    # The earlier cutoff steps back another 30 days.
+    assert (cutoffs["train_cutoffs"][-1] - cutoffs["train_cutoffs"][0]).days == 30
+    # A shortened lookback still leaves every cutoff with full feature history.
+    for cutoff in cutoffs["train_cutoffs"]:
+        assert cutoff - pd.Timedelta(days=90) >= cutoffs["data_start"]
+
+    # The snapshots actually built agree with those cutoffs.
+    train_df, test_df, used = build_all_snapshots(df, cutoffs, lookback_days=90, horizon_days=90)
+    assert set(pd.to_datetime(train_df["cutoff"]).unique()) <= set(used)
+    for cutoff in pd.to_datetime(train_df["cutoff"]).unique():
+        assert cutoff + horizon <= pd.Timestamp(test_df["cutoff"].iloc[0])
 
 
 def test_single_outcome_class_is_handled_gracefully():
