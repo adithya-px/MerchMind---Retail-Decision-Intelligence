@@ -59,6 +59,7 @@ from src.customer_segmentation import (
 from src.declining_activity import detect_declining_customers
 from src.anomaly_detection import detect_sales_anomalies
 from src.recommendations import generate_recommendations
+from src.churn_model import get_cached_pipeline, get_outreach_dataframe
 
 
 # ---------------------------------------------------------
@@ -624,6 +625,33 @@ def get_strategic_recommendations(
 
 
 # ---------------------------------------------------------
+# Predictive Analytics (churn snapshots + outreach)
+# ---------------------------------------------------------
+@app.get("/api/predictive")
+def get_predictive_analytics(refresh: bool = False):
+    """
+    Supervised churn/inactivity model evaluated on a held-out future cutoff,
+    plus a spend forecast and the expected-revenue-at-risk outreach ranking.
+
+    Snapshot cutoffs are derived from the dataset itself, so the date/country
+    cohort filters used by the descriptive tabs do not apply here.
+    """
+    store = require_loaded()
+
+    if store.customer_df is None or store.customer_df.empty:
+        raise HTTPException(status_code=400, detail="No identified-customer transactions available.")
+
+    dataset_key = store.file_hash or store.filename or "dataset"
+    payload = get_cached_pipeline(
+        store.customer_df,
+        dataset_key=dataset_key,
+        cancellations_df=store.cancellations_df,
+        use_cache=not refresh,
+    )
+    return ok(payload)
+
+
+# ---------------------------------------------------------
 # Anomaly Detection & Audit Log
 # ---------------------------------------------------------
 @app.get("/api/anomalies")
@@ -736,6 +764,17 @@ def export_csv(
         anomalies_df = daily_df[daily_df["IsAnomaly"]] if not daily_df.empty else pd.DataFrame()
         anomalies_df.to_csv(stream, index=False)
         filename = "merchmind_sales_anomalies.csv"
+    elif export_type == "outreach":
+        # Predictive ranking is built on the full dataset (snapshot design), not the cohort filters.
+        outreach_df = get_outreach_dataframe(
+            store.customer_df,
+            dataset_key=store.file_hash or store.filename or "dataset",
+            cancellations_df=store.cancellations_df,
+        )
+        if outreach_df.empty:
+            raise HTTPException(status_code=400, detail="No predictive outreach table available for this dataset.")
+        outreach_df.to_csv(stream, index=False)
+        filename = "merchmind_outreach_priority_list.csv"
     else:
         raise HTTPException(status_code=400, detail=f"Invalid export type: {export_type}")
 

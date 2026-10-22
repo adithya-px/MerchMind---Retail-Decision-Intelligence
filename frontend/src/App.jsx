@@ -7,6 +7,7 @@ import SalesTab from './components/SalesTab';
 import SegmentsTab from './components/SegmentsTab';
 import AnomaliesTab from './components/AnomaliesTab';
 import DecliningTab from './components/DecliningTab';
+import PredictiveTab from './components/PredictiveTab';
 import RecommendationsTab from './components/RecommendationsTab';
 import AuditTab from './components/AuditTab';
 import ExportsTab from './components/ExportsTab';
@@ -19,6 +20,7 @@ const TABS = {
   segments: SegmentsTab,
   anomalies: AnomaliesTab,
   declining: DecliningTab,
+  predictive: PredictiveTab,
   recommendations: RecommendationsTab,
   audit: AuditTab,
   exports: ExportsTab,

@@ -54,6 +54,7 @@ export const api = {
   decliningCustomers: (filters) => request(`/api/declining-customers${buildQuery(filters)}`),
   recommendations: (filters) => request(`/api/recommendations${buildQuery(filters)}`),
   anomalies: (filters) => request(`/api/anomalies${buildQuery(filters)}`),
+  predictive: () => request('/api/predictive'),
   auditLog: () => request('/api/audit-log'),
   exportUrl: (type, filters = {}, extra = {}) =>
     `${API_BASE}/api/export/${type}${buildQuery({ ...filters, ...extra })}`,

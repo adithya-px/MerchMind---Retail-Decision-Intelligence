@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, TrendingUp, Users, Zap, AlertTriangle, Star, ClipboardList, Download, ChevronDown, Upload, Sparkles } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, Users, Zap, AlertTriangle, Star, ClipboardList, Download, ChevronDown, Upload, Sparkles, Target } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'segments', icon: Users, label: 'Segments' },
   { id: 'anomalies', icon: AlertTriangle, label: 'Anomalies' },
   { id: 'declining', icon: Zap, label: 'At-Risk' },
+  { id: 'predictive', icon: Target, label: 'Predictive' },
   { id: 'recommendations', icon: Star, label: 'Recommendations' },
   { id: 'audit', icon: ClipboardList, label: 'Audit Log' },
   { id: 'exports', icon: Download, label: 'Exports' },

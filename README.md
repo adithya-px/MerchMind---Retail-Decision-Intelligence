@@ -56,11 +56,18 @@ MerchMind is an end-to-end data science, business intelligence, and customer ana
 * **Rolling Baseline Envelope**: 14-day rolling median baseline with IQR boundary thresholds.
 * **Surge & Drop Alerts**: Distinguishes volume spikes from sudden demand plunges with clear operational investigation guidance.
 
-### 7. Filtered Data Exports (Feature C)
+### 7. Predictive Analytics — Churn Model & Outreach Ranking
+* **Snapshot Design**: Customers are described at cutoffs derived from the data (test cutoff = dataset end − 90 days, two training cutoffs 30 days apart before it). Features use only the 180 days before each cutoff; the label uses the 90 days after it.
+* **Honest Evaluation**: Dummy, the existing decline heuristic, Logistic Regression, Random Forest, and XGBoost are scored on the same held-out future cutoff with ROC-AUC, PR-AUC, precision/recall/F1 at a validation-chosen threshold, and top-decile lift.
+* **Expected Revenue at Risk**: `P(inactive) × predicted 90-day spend`, ranked into a contact list with a list-size slider, coverage share, and CSV export.
+* **Cached Fits**: A fitted pipeline is cached with joblib per dataset hash, so the tab loads in well under a second after the first fit.
+
+### 8. Filtered Data Exports (Feature C)
 * **Synchronized CSV Downloads**: Exports match the active sidebar filters (Date Range, Country):
   1. Cleaned positive transactions (`.csv`)
   2. Customer RFM + Segment Names + Declining Flag (`.csv`)
   3. Monthly and Daily Sales Summary (`.csv`)
+  4. Predictive outreach priority list with churn probability, predicted spend and expected revenue at risk (`.csv`)
 
 ---
 
@@ -80,7 +87,37 @@ MerchMind_Project/
 └── README.md
 ```
 
-REST endpoints: `/api/dataset/upload`, `/api/dataset/status`, `/api/overview`, `/api/sales`, `/api/customer-segments`, `/api/model-diagnostics`, `/api/declining-customers`, `/api/recommendations`, `/api/anomalies`, `/api/audit-log`, `/api/export/{sales|monthly|segments|declining|anomalies}`.
+REST endpoints: `/api/dataset/upload`, `/api/dataset/status`, `/api/overview`, `/api/sales`, `/api/customer-segments`, `/api/model-diagnostics`, `/api/declining-customers`, `/api/predictive`, `/api/recommendations`, `/api/anomalies`, `/api/audit-log`, `/api/export/{sales|monthly|segments|declining|anomalies|outreach}`.
+
+---
+
+## 🔮 Predictive Analytics — Method, Validation & Real Results
+
+The **Predictive** tab is a supervised layer, not a re-labelled heuristic. Code lives in `src/churn_model.py`.
+
+**Label.** At a cutoff date, a customer is *eligible* if they have at least one valid (non-cancelled, non-fee, positive-price) sales invoice in the preceding 180 days. The label is **1** when an eligible customer has **no** valid sales invoice in the 90 days after the cutoff, and **0** otherwise. Eligibility keeps the cohort to customers with recent signal; customers who stop buying before the lookback starts are not scored.
+
+**Validation design.** Cutoffs come from the data, never hardcoded: the test cutoff is `dataset end − 90 days` (so its label window ends exactly at the dataset end) and two training cutoffs sit 30 and 60 days before it. All models are fit on the pooled training snapshots and scored **once** on the test cutoff. Decision thresholds are chosen by F1 on a 30% validation split carved out of the *training* cutoffs, then each model is refit on all training snapshots — the test set never influences a threshold or a hyperparameter. Hyperparameters are fixed (no search); seeds are fixed.
+
+**Results on the official UCI Online Retail dataset** (test cutoff 2011-09-10, 2,783 eligible customers, 38.2% inactivity rate):
+
+| Model | ROC-AUC | PR-AUC | Precision | Recall | F1 | Top-decile lift |
+|---|---|---|---|---|---|---|
+| Random Forest | 0.758 | 0.621 | 0.52 | 0.86 | 0.64 | 1.85× |
+| XGBoost | 0.754 | 0.620 | 0.52 | 0.84 | 0.64 | 1.78× |
+| Logistic Regression | 0.739 | 0.585 | 0.53 | 0.80 | 0.63 | 1.66× |
+| Decline rule (existing heuristic) | 0.617 | 0.476 | 0.42 | 0.79 | 0.55 | 1.40× |
+| Dummy (prior probability) | 0.500 | 0.382 | 0.38 | 1.00 | 0.55 | 0.89× |
+
+Random Forest is the selected model (threshold 0.38) and beats the decline heuristic by ~0.14 ROC-AUC. It beats logistic regression by only 0.019 ROC-AUC and ~0.005 F1 — on a single time split that is a statistical tie, so the README does not claim the ensemble is necessary. The strongest permutation-importance features are tenure, 180-day spend, order count and distinct products.
+
+**Spend model.** An XGBoost regressor predicts `log1p(spend in the next 90 days)` from the same snapshot features, purely to weight the outreach list. Against the persistence baseline ("assume they repeat the last 90 days") it improves MAE from £679 to £630 (+7.3%) and Spearman correlation from 0.441 to 0.575. That is a modest edge, which is why it is used as a ranking weight rather than reported as a revenue forecast.
+
+**Expected revenue at risk.** `P(inactive) × predicted 90-day spend` ranks customers for contact. On the held-out cutoff the total is ~£95.5K of expected revenue at risk, and contacting the top 200 customers covers ~49% of it.
+
+**Limitations.** Only one year of transactions exists, so there are three cutoffs and the metrics come from a single time split; treat the differences between models as indicative. The model predicts who is likely to go quiet, not what a campaign would change — this is predictive signal, not a causal effect. Customers inactive before the lookback window are outside the cohort. Invoice dates near the dataset end have a shorter observed outcome window than the full 90 days. The pipeline refuses to train when only one outcome class is present or fewer than 50 customers qualify, and the UI states why instead of showing empty charts.
+
+Reproduce the checks with `py -m pytest tests/test_churn_model.py -v` (label construction, no-leakage from post-cutoff transactions, and graceful degradation for a single class / too few customers).
 
 ---
 
@@ -128,7 +165,7 @@ Upload a CSV/XLSX with columns `InvoiceNo, StockCode, Description, Quantity, Inv
 ```bash
 py -m pytest -v
 ```
-Analytics tests cover cleaning, KPIs, RFM/K-Means, declining activity, and anomalies. `tests/test_api.py` uploads a schema-valid transaction CSV and asserts overview, sales, segments, exports, and related endpoints.
+Analytics tests cover cleaning, KPIs, RFM/K-Means, declining activity, anomalies, and the predictive snapshot layer (label construction, leakage, graceful degradation). `tests/test_api.py` uploads a schema-valid transaction CSV and asserts overview, sales, segments, exports, and related endpoints.
 
 ---
 
